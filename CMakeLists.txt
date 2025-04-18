@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(TasteQtWidgets LANGUAGES CXX)
+# Read the version information from the "VERSION" file
+file(READ ${CMAKE_SOURCE_DIR}/VERSION VERSION_STRING)
+string(STRIP "${VERSION_STRING}" VERSION_STRING)
+
+project(TasteQtWidgets VERSION ${VERSION_STRING} LANGUAGES CXX)
+message(STATUS "TasteQtWidgets VERSION: <${PROJECT_VERSION}>")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
