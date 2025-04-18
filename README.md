@@ -10,6 +10,10 @@ The C++ implementation is in the directory `tastewidgets`. It can be used by inc
 
 The Python bindings are in the directory `pytastewidgets`. To build the binding, check out the `README.md` there.
 
+## Version
+
+The version is set in the file `VERSION` only. Cmake does read it there and configure the rest.
+
 ## Documentation
 
 Developer documentation can be created, using the tool Doxygen. The HTML based output serves as documentation for C++ and for Python.

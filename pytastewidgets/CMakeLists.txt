@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(TasteQtWidgets VERSION 1.3.0 DESCRIPTION "C++/Qt Widgets for ESA Python projects" LANGUAGES CXX)
+# Read the version information from the "VERSION" file
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../VERSION VERSION_STRING)
+string(STRIP "${VERSION_STRING}" VERSION_STRING)
+
+project(TasteQtWidgets VERSION ${VERSION_STRING} DESCRIPTION "C++/Qt Widgets for ESA Python projects" LANGUAGES CXX)
+
+message(STATUS "TasteQtWidgets VERSION: <${PROJECT_VERSION}>")
+# Write version for python module
+configure_file(__init__.py.in ${CMAKE_SOURCE_DIR}/__init__.py @ONLY)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
 
