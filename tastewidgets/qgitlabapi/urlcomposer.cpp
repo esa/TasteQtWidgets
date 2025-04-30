@@ -121,6 +121,29 @@ QUrl UrlComposer::composeProjectUrl(const QString &projectName) const
     return url;
 }
 
+QUrl UrlComposer::composeGroupUrl(const QString &groupName) const
+{
+    QString address = composeUrl(UrlComposer::UrlTypes::Projects);
+
+    const QMap<QString, QVariant> data = {
+        { "search", groupName } // Search project name
+    };
+
+    QUrl url(address);
+    url.setQuery(setQuery(data));
+    return url;
+}
+
+QUrl UrlComposer::composeCreateProjectUrl(const QString &projectName, const QString &groupID) const
+{
+    QString address = composeUrl(UrlComposer::UrlTypes::CreateProject);
+    QMap<QString, QVariant> data = { { "name", projectName }, { "namespace_id", groupID } };
+
+    QUrl url(address);
+    url.setQuery(setQuery(data));
+    return url;
+}
+
 QString UrlComposer::composeUrl(UrlTypes target) const
 {
     QString address(mBaseURL.toString());
@@ -134,8 +157,13 @@ QString UrlComposer::composeUrl(UrlTypes target) const
         address += "/projects/%1/issues/%2";
         break;
     }
+    case UrlComposer::UrlTypes::CreateProject:
     case UrlComposer::UrlTypes::Projects: {
         address += "/projects";
+        break;
+    }
+    case UrlComposer::UrlTypes::Groups: {
+        address += "/groups";
         break;
     }
     case UrlComposer::UrlTypes::ProjectLabels: {
@@ -144,4 +172,9 @@ QString UrlComposer::composeUrl(UrlTypes target) const
     }
     }
     return address;
+}
+
+QUrl UrlComposer::baseURL() const
+{
+    return mBaseURL;
 }

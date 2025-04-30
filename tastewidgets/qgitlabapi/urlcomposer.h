@@ -19,6 +19,8 @@ public:
         CreateIssue,
         EditIssue,
         Projects,
+        Groups,
+        CreateProject,
         ProjectLabels,
     };
 
@@ -35,8 +37,12 @@ public:
 
     QUrl composeProjectLabelsUrl(const LabelsRequestOptions &options) const;
     QUrl composeProjectUrl(const QString &projectName) const;
+    QUrl composeGroupUrl(const QString &groupName) const;
+    QUrl composeCreateProjectUrl(const QString &projectName, const QString &groupID) const;
 
     void setBaseURL(const QUrl &newBaseURL);
+
+    QUrl baseURL() const;
 
 protected:
     QString composeUrl(UrlComposer::UrlTypes target) const;

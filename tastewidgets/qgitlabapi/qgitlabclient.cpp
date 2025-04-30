@@ -228,6 +228,75 @@ bool QGitlabClient::isBusy() const
     return m_busy;
 }
 
+bool QGitlabClient::requestGroupID(const QString &groupName)
+{
+    if (isBusy()) {
+        return true;
+    }
+    setBusy(true);
+    auto reply = sendRequest(QGitlabClient::GET, mUrlComposer.composeProjectUrl(groupName));
+    connect(reply, &QNetworkReply::finished, [reply, this]() {
+        setBusy(false);
+        QString groupID = QString("-1");
+        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200) {
+            QJsonParseError jsonError;
+            auto replyContent = QJsonDocument::fromJson(reply->readAll(), &jsonError);
+            if (QJsonParseError::NoError != jsonError.error) {
+                WRN << "ERROR: Parsing json data: " << jsonError.errorString();
+                const QString &errMsg = QString("ERROR: QGitlabClient::requestGroupId: Parsing json data: %1, #%2")
+                                                .arg(jsonError.errorString())
+                                                .arg(jsonError.offset);
+                WRN << errMsg;
+                notifyError(reply, errMsg);
+            } else {
+                auto content = replyContent.array();
+                if (!content.isEmpty()) {
+                    static const auto ID = "id";
+                    for (const auto item : content) {
+                        const QString groupUrlStr(mUrlComposer.baseURL().toString());
+                        const auto &itemObj = item.toObject();
+                        const bool objOk = !itemObj.isEmpty() && itemObj.contains("web_url") && itemObj.contains("id");
+                        if (objOk && itemObj.value("web_url").toString() == groupUrlStr) {
+                            groupID = itemObj.value("id").toString();
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            WRN << reply->error() << reply->errorString();
+            notifyError(reply,
+                    QString("Response %1 != 200")
+                            .arg(reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()));
+        }
+        Q_EMIT requestedGroupID(groupID);
+    });
+    return false;
+}
+
+bool QGitlabClient::createProject(const QString &projectName, const QString &groupID)
+{
+    if (isBusy()) {
+        return true;
+    }
+    setBusy(true);
+    auto reply = sendRequest(QGitlabClient::POST, mUrlComposer.composeCreateProjectUrl(projectName, groupID));
+    connect(reply, &QNetworkReply::finished, [reply, this, &projectName]() {
+        setBusy(false);
+        if (reply->error() != QNetworkReply::NoError) {
+            WRN << reply->error() << reply->errorString();
+            notifyError(reply, "QGitlabClient::createProject");
+
+        } else {
+            QJsonDocument replyContent = QJsonDocument::fromJson(reply->readAll());
+            QJsonObject jobj = replyContent.object();
+            Issue issue(jobj);
+            Q_EMIT projectCreated(projectName);
+        }
+    });
+    return false;
+}
+
 QNetworkReply *QGitlabClient::sendRequest(QGitlabClient::ReqType reqType, const QUrl &uri)
 {
     QNetworkRequest request(uri);

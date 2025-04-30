@@ -89,6 +89,10 @@ public:
      */
     bool isBusy() const;
 
+    bool requestGroupID(const QString &groupName);
+
+    bool createProject(const QString &projectName, const QString &groupID);
+
 Q_SIGNALS:
     /*!
      * Provides a block/page of issues
@@ -120,6 +124,13 @@ Q_SIGNALS:
      */
     void requestedProjectID(int);
     /*!
+     * \brief This is the group ID obtained after calling `requestGroupId`.
+     * The signal will be emitted if there's a response and the url supplied matches
+     * the one contained in the reply's json data.
+     */
+    void requestedGroupID(QString groupID);
+
+    /*!
      * \brief This signal is emitted for any failing request of this class
      * \param errorString returns a text message corresponding to request error.
      */
@@ -134,6 +145,11 @@ Q_SIGNALS:
      * \brief This signal is emitted if an issue is Closed. At the moment is used to refresh the list of requirements.
      */
     void issueClosed();
+    /*!
+     * \brief projectCreated signal is emitted if the project was successfully created
+     * \param projectName
+     */
+    void projectCreated(const QString &projectName);
 
 protected:
     QNetworkReply *sendRequest(ReqType reqType, const QUrl &url);
