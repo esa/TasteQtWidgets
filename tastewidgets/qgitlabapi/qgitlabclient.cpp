@@ -303,7 +303,7 @@ bool QGitlabClient::requestGroupProjects(const QString &groupID)
     }
     setBusy(true);
 
-    auto reply = sendRequest(QGitlabClient::POST, mUrlComposer.composeGroupProjectsUrl(groupID));
+    auto reply = sendRequest(QGitlabClient::GET, mUrlComposer.composeGroupProjectsUrl(groupID));
     connect(reply, &QNetworkReply::finished, [reply, this]() {
         setBusy(false);
 
@@ -328,7 +328,6 @@ bool QGitlabClient::requestGroupProjects(const QString &groupID)
                         if (objOk) {
                             projectHttpUrls << itemObj.value("http_url_to_repo").toString();
                         }
-                        break;
                     }
                     if (!projectHttpUrls.isEmpty()) {
                         Q_EMIT listOfGroupProjectsURLs(projectHttpUrls);
