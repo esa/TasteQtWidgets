@@ -345,6 +345,11 @@ bool QGitlabClient::requestGroupProjects(const QString &groupID)
     return false;
 }
 
+QString QGitlabClient::token()
+{
+    return mToken;
+}
+
 QNetworkReply *QGitlabClient::sendRequest(QGitlabClient::ReqType reqType, const QUrl &uri)
 {
     QNetworkRequest request(uri);

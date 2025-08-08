@@ -94,7 +94,11 @@ public:
     bool createProject(const QString &projectName, const QString &groupID);
 
     bool requestGroupProjects(const QString &groupID);
-
+    /*!
+     * \brief token retrieves the token used by this class
+     * \return
+     */
+    QString token();
 Q_SIGNALS:
     /*!
      * Provides a block/page of issues
