@@ -234,7 +234,7 @@ bool QGitlabClient::requestGroupID(const QString &groupName)
         return true;
     }
     setBusy(true);
-    auto reply = sendRequest(QGitlabClient::GET, mUrlComposer.composeProjectUrl(groupName));
+    auto reply = sendRequest(QGitlabClient::GET, mUrlComposer.composeGroupUrl(groupName));
     connect(reply, &QNetworkReply::finished, [reply, this]() {
         setBusy(false);
         QString groupID = QString("-1");
@@ -253,11 +253,10 @@ bool QGitlabClient::requestGroupID(const QString &groupName)
                 if (!content.isEmpty()) {
                     static const auto ID = "id";
                     for (const auto item : content) {
-                        const QString groupUrlStr(mUrlComposer.baseURL().toString());
                         const auto &itemObj = item.toObject();
                         const bool objOk = !itemObj.isEmpty() && itemObj.contains("web_url") && itemObj.contains("id");
-                        if (objOk && itemObj.value("web_url").toString() == groupUrlStr) {
-                            groupID = itemObj.value("id").toString();
+                        if (objOk) {
+                            groupID = QString::number(itemObj.value("id").toInt());
                             break;
                         }
                     }
@@ -295,6 +294,60 @@ bool QGitlabClient::createProject(const QString &projectName, const QString &gro
         }
     });
     return false;
+}
+
+bool QGitlabClient::requestGroupProjects(const QString &groupID)
+{
+    if (isBusy()) {
+        return true;
+    }
+    setBusy(true);
+
+    auto reply = sendRequest(QGitlabClient::GET, mUrlComposer.composeGroupProjectsUrl(groupID));
+    connect(reply, &QNetworkReply::finished, [reply, this]() {
+        setBusy(false);
+
+        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200) {
+            QJsonParseError jsonError;
+            auto replyContent = QJsonDocument::fromJson(reply->readAll(), &jsonError);
+            if (QJsonParseError::NoError != jsonError.error) {
+                WRN << "ERROR: Parsing json data: " << jsonError.errorString();
+                const QString &errMsg =
+                        QString("ERROR: QGitlabClient::requestGroupProjects: Parsing json data: %1, #%2")
+                                .arg(jsonError.errorString())
+                                .arg(jsonError.offset);
+                WRN << errMsg;
+                notifyError(reply, errMsg);
+            } else {
+                auto content = replyContent.array();
+                if (!content.isEmpty()) {
+                    QStringList projectHttpUrls;
+                    for (const auto item : content) {
+                        const auto &itemObj = item.toObject();
+                        const bool objOk = !itemObj.isEmpty() && itemObj.contains("http_url_to_repo");
+                        if (objOk) {
+                            projectHttpUrls << itemObj.value("http_url_to_repo").toString();
+                        }
+                    }
+                    if (!projectHttpUrls.isEmpty()) {
+                        Q_EMIT listOfGroupProjectsURLs(projectHttpUrls);
+                    }
+                }
+            }
+        } else {
+            WRN << reply->error() << reply->errorString();
+            notifyError(reply,
+                    QString("Response %1 != 200")
+                            .arg(reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()));
+        }
+    });
+
+    return false;
+}
+
+QString QGitlabClient::token()
+{
+    return mToken;
 }
 
 QNetworkReply *QGitlabClient::sendRequest(QGitlabClient::ReqType reqType, const QUrl &uri)
