@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2023 European Space Agency - <maxime.perrotin@esa.int>
+   Copyright (C) 2025 European Space Agency - <maxime.perrotin@esa.int>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -21,6 +21,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include "requirement.h"
 
 #include <memory>
+#include "../qgitlabapi/issue.h"
+
+using namespace gitlab;
 
 namespace requirement {
 
@@ -40,23 +43,7 @@ public:
      * \brief Makes a request to retrieve all the requirements
      * \return Returns true if there's a pending request otherwise false.
      */
-    bool requestAllRequirements();
-    /*!
-     * \brief Makes a request to create requirement
-     * \param title The title of the requirement
-     * \param reqIfId The ID of the requirement (Not be confused with the Gitlab issue ID)
-     * \param description The requiement's description
-     * \param testMethod The test method of the requirement
-     * \return Returns true if there's a pending request otherwise false.
-     */
-    bool createRequirement(
-            const QString &title, const QString &reqIfId, const QString &description, const QString &testMethod) const;
-    /*!
-     * \brief Removes a requirement
-     * \param requirement Instance of the requirement object to be removed
-     * \return Returns true if there's a pending request otherwise false.
-     */
-    bool removeRequirement(const Requirement &requirement) const;
+    bool requestAllRequirements(QString typeLabel);
 
 Q_SIGNALS:
     /*!
@@ -80,9 +67,21 @@ Q_SIGNALS:
      */
     void requirementClosed();
 
+    void reportProgress(const QString &) const;
+
+//    void updateIssue();
+
+public Q_SLOTS:
+    void removeRequirement(const Requirement &requirement) const;
+    void createRequirement(const Requirement &requirement) const;
+    void editRequirement(const Requirement &requirement) const;
+
 private:
     class RequirementsManagerPrivate;
     std::unique_ptr<RequirementsManagerPrivate> d;
+    volatile bool m_issueBufferFlag;
+    gitlab::Issue *m_issuebuffer;
+    QString m_message;
 };
 
 }

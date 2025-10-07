@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2023 European Space Agency - <maxime.perrotin@esa.int>
+   Copyright (C) 2025 European Space Agency - <maxime.perrotin@esa.int>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -19,9 +19,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include <QDialog>
 #include <QPointer>
+#include "requirement.h"
+#include "virtualassistantdialog.h"
 
 namespace Ui {
-class AddNewRequirementDialog;
+class BasicRequirementDialog;
 }
 
 namespace requirement {
@@ -36,17 +38,18 @@ class AddNewRequirementDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit AddNewRequirementDialog(requirement::RequirementsModelBase *model, QWidget *parent = nullptr);
+    explicit AddNewRequirementDialog(requirement::RequirementsModelBase *model, Requirement *requirement, QWidget *parent = nullptr);
     ~AddNewRequirementDialog();
-    QString title() const;
-    QString description() const;
-    QString reqIfId() const;
-    QString testMethod() const;
+    void updateRequirement();
 
 private:
+    void addParent();
+    void removeParent();
     void updateOkButton();
+//    void showVirtualAssistantDialog();
+    Requirement *m_requirement;
     requirement::RequirementsModelBase *m_model;
-    Ui::AddNewRequirementDialog *ui;
+    Ui::BasicRequirementDialog *ui;
 };
 
 }

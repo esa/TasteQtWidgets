@@ -42,6 +42,7 @@ public:
     explicit IssuesManager(QObject *parent = nullptr);
 
     bool setCredentials(const QString &url, const QString &token);
+    bool setRequirementsCredentials(const QString &url, const QString &token);
     QString projectUrl() const;
     const QString &token() const;
 

@@ -14,6 +14,8 @@ namespace gitlab {
 class QGITLABAPI_EXPORT Issue
 {
 public:
+    Issue();
+    Issue(const Issue &issue);
     Issue(const QJsonObject &issue);
 
     QUrl mUrl; // Web page of the issue

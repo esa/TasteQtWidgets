@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>527</width>
-    <height>427</height>
+    <width>892</width>
+    <height>562</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -17,13 +17,114 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Requirements Manager</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
+   <item row="3" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="filterLabel">
+       <property name="minimumSize">
+        <size>
+         <width>120</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Filter&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="margin">
+        <number>4</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="filterLineEdit">
+       <property name="clearButtonEnabled">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="modelTypeLabel">
+       <property name="minimumSize">
+        <size>
+         <width>123</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Empty</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="0">
+    <layout class="QHBoxLayout" name="refreshLayout">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="minimumSize">
+        <size>
+         <width>120</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Source&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="margin">
+        <number>4</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="sourceLineEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="clearButton">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>123</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Clear</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
    <item row="5" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QPushButton" name="createRequirementButton">
+       <property name="minimumSize">
+        <size>
+         <width>140</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="maximumSize">
         <size>
          <width>16777215</width>
@@ -37,38 +138,27 @@
      </item>
      <item>
       <widget class="QPushButton" name="removeRequirementButton">
+       <property name="minimumSize">
+        <size>
+         <width>140</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="text">
         <string>Remove requirement</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_3">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
-   <item row="2" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QLabel" name="label">
+      <widget class="QPushButton" name="vaButton">
        <property name="minimumSize">
         <size>
-         <width>30</width>
+         <width>140</width>
          <height>0</height>
         </size>
        </property>
        <property name="text">
-        <string/>
+        <string>Virtual Assistant</string>
        </property>
       </widget>
      </item>
@@ -86,47 +176,41 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="refreshButton">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
+      <widget class="QPushButton" name="importRequirementsButton">
        <property name="minimumSize">
         <size>
-         <width>123</width>
+         <width>140</width>
          <height>0</height>
         </size>
        </property>
        <property name="text">
-        <string>Refresh</string>
+        <string>Import Requirements</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QLabel" name="serverStatusLabel">
+      <widget class="QPushButton" name="exportRequirementsButton">
        <property name="minimumSize">
         <size>
-         <width>30</width>
+         <width>140</width>
          <height>0</height>
         </size>
        </property>
        <property name="text">
-        <string/>
+        <string>Export Requirements</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="applyPushButton">
+       <property name="minimumSize">
+        <size>
+         <width>140</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Apply Edits</string>
        </property>
       </widget>
      </item>
@@ -139,6 +223,18 @@
      </property>
      <item>
       <widget class="QTableView" name="allRequirements">
+       <property name="selectionBehavior">
+        <enum>QAbstractItemView::SelectRows</enum>
+       </property>
+       <property name="sortingEnabled">
+        <bool>true</bool>
+       </property>
+       <attribute name="horizontalHeaderMinimumSectionSize">
+        <number>80</number>
+       </attribute>
+       <attribute name="horizontalHeaderDefaultSectionSize">
+        <number>160</number>
+       </attribute>
        <attribute name="horizontalHeaderStretchLastSection">
         <bool>true</bool>
        </attribute>
@@ -147,51 +243,19 @@
        </attribute>
       </widget>
      </item>
-    </layout>
-   </item>
-   <item row="3" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <widget class="QLabel" name="filterLabel">
-       <property name="text">
-        <string>Filter</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="filterLineEdit">
-       <property name="clearButtonEnabled">
+      <widget class="QTextEdit" name="textEdit">
+       <property name="readOnly">
         <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QPushButton" name="filterButton">
-       <property name="toolTip">
-        <string>Toggle to show only used items</string>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
     </layout>
-   </item>
-   <item row="1" column="0">
-    <widget class="tracecommon::CredentialWidget" name="credentialWidget" native="true"/>
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>tracecommon::CredentialWidget</class>
-   <extends>QWidget</extends>
-   <header>credentialwidget.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <tabstops>
-  <tabstop>refreshButton</tabstop>
+  <tabstop>clearButton</tabstop>
   <tabstop>filterLineEdit</tabstop>
  </tabstops>
  <resources/>

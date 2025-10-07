@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2023 European Space Agency - <maxime.perrotin@esa.int>
+   Copyright (C) 2025 European Space Agency - <maxime.perrotin@esa.int>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -20,11 +20,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include "checkedfilterproxymodel.h"
 #include "issuetextproxymodel.h"
 #include "tagfilterproxymodel.h"
+#include "reqif.h"
+#include "excel.h"
 
 #include <QItemSelection>
 #include <QPointer>
 #include <QSortFilterProxyModel>
 #include <QToolButton>
+#include <QProgressBar>
 #include <QWidget>
 
 class QHeaderView;
@@ -33,17 +36,23 @@ namespace Ui {
 class RequirementsWidget;
 }
 
-namespace ive {
-class InterfaceDocument;
-}
-
 namespace tracecommon {
 class WidgetBar;
 }
 
+namespace QXlsx {
+class Document;
+}
+
 namespace requirement {
-class RequirementsManager;
 class RequirementsModelBase;
+class RequirementsManager;
+class RequirementsModelCommon;
+
+static const QString exportDialogTitle("Requirements Export Target");
+static const QString exportDialogLabel("Select the export target from the Requirements Manager.");
+static const QString importDialogTitle("Requirements Import Source");
+static const QString importDialogLabel("Select the import source to the Requirements Manager.");
 
 class RequirementsWidget : public QWidget
 {
@@ -61,7 +70,7 @@ public:
      * Model for the QTableView to show the requirements
      */
     void setModel(requirement::RequirementsModelBase *model);
-
+    void setModel(requirement::RequirementsModelCommon *model);
     /*!
      * Returns the URL to fetch the requirements from
      */
@@ -82,34 +91,58 @@ public:
     void setToken(const QString &token);
 
     /*!
+     * refresh the table from the current repo.
+     */
+    void refresh();
+
+    /*!
      * A pointer to the table header, so the column geometry can be saved/restored
      */
     QHeaderView *horizontalTableHeader() const;
 
+    void onClear();
+
+    void setEmbedded() {m_embedded = true;};
+
 protected Q_SLOTS:
     void setLoginData();
+    void applyEdits();
+    void workingCompleted();
     void updateServerStatus();
-    void updateProjectReady();
     void openIssueLink(const QModelIndex &index);
-    void toggleShowUsedRequirements();
     void requestRequirements();
-    void showNewRequirementDialog() const;
+    void showVirtualAssistantDialog();
+    void showNewRequirementDialog();
+    void showEditRequirementDialog(const QModelIndex &index);
+    void showExportRequirementsDialog() const;
+    void showExportExcelFileRequirementsDialog(enum RequirementsModelBase::modelType type) const;
+    void showExportReqIfFileRequirementsDialog(enum RequirementsModelBase::modelType type) const;
+    void showImportRequirementsDialog();
+    void showImportReqIfFileRequirementsDialog(enum RequirementsModelBase::modelType type);
+    void showImportExcelFileRequirementsDialog(enum RequirementsModelBase::modelType type);
     void removeRequirement();
     void modelSelectionChanged(const QItemSelection &selected, const QItemSelection &);
     void fillTagBar(const QStringList &tags);
+    void progress(const QString &text);
 
 Q_SIGNALS:
+    void loadGitLab() const;
     void requirementSelected(QString RequirementID, bool checked);
     void requirementsUrlChanged(QString requirementsUrl);
     void requirementsCredentialsChanged(QUrl url, QString token);
 
 protected:
     QString m_requirementsUrl;
+    QString m_requirementsToken;
+    QString m_targetUrl;
+    QString m_targetToken;
 
 private:
     bool tagButtonExists(const QString &tag) const;
-    void onChangeOfCredentials();
+    void onChangeOfCredentials(const QString url, const QString token);
+    void setModelTypeLabel(enum RequirementsModelBase::modelType type);
 
+    volatile bool m_checkingServer;
     Ui::RequirementsWidget *ui;
     QList<QToolButton *> m_tagButtons;
     tracecommon::WidgetBar *m_widgetBar;
@@ -118,6 +151,9 @@ private:
     tracecommon::IssueTextProxyModel m_textFilterModel;
     tracecommon::TagFilterProxyModel m_tagFilterModel;
     CheckedFilterProxyModel m_checkedModel;
+    QtMessageHandler m_originalHandler;
+    bool m_embedded;
+    bool m_apply;
 };
 
-}
+} // namespace requirement

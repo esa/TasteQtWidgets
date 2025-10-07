@@ -93,12 +93,6 @@ public:
 
     bool createProject(const QString &projectName, const QString &groupID);
 
-    bool requestGroupProjects(const QString &groupID);
-    /*!
-     * \brief token retrieves the token used by this class
-     * \return
-     */
-    QString token();
 Q_SIGNALS:
     /*!
      * Provides a block/page of issues
@@ -156,11 +150,6 @@ Q_SIGNALS:
      * \param projectName
      */
     void projectCreated(const QString &projectName);
-    /*!
-     * \brief listOfGroupProjectsURLs This signal is emitted if the list of projects for a gitlab group is succefully
-     * retrieved \param projectUrls
-     */
-    void listOfGroupProjectsURLs(QStringList projectUrls);
 
 protected:
     QNetworkReply *sendRequest(ReqType reqType, const QUrl &url);

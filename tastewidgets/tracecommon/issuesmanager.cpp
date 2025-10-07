@@ -67,6 +67,31 @@ bool IssuesManager::setCredentials(const QString &url, const QString &token)
     return requestProjectID(url);
 }
 
+bool IssuesManager::setRequirementsCredentials(const QString &url, const QString &token)
+{
+    if (m_projectUrl == url && token == m_token) {
+        return true;
+    }
+
+    m_projectUrl = url;
+    m_token = token;
+
+    if (m_projectUrl.isEmpty() || m_token.isEmpty()) {
+        return false;
+    }
+
+    QUrl _url;
+    _url.setScheme("https");
+    _url.setHost(QUrl(url).host());
+    _url.setPath("/api/v4/");
+
+    switch (m_d->repoType) {
+
+    case (REPO_TYPE::GITLAB):
+        m_d->gitlabClient->setCredentials(_url.scheme() + "://" + _url.host(), token);
+    }
+    return requestProjectID(url);
+}
 /*!
  * URL of the project to load the requirements data from
  */
@@ -137,9 +162,12 @@ QStringList IssuesManager::tagsBuffer()
 
 void IssuesManager::setProjectID(const int &newProjectID)
 {
-    if (m_projectID == newProjectID) {
-        return;
-    }
+// Always emit projectIDChanged because multiple invalid projects will all have projectID -1
+// So you cannot test multiple incorrect Urls if you don't get multiple projectIDChanged messages
+//
+//    if (m_projectID == newProjectID) {
+//        return;
+//    }
     m_projectID = newProjectID;
     Q_EMIT projectIDChanged();
 }

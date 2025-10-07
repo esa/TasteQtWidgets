@@ -27,42 +27,10 @@ void GitLabRequirements::listOfIssues(const QList<gitlab::Issue> &issues)
 {
     QList<Requirement> requirements;
     requirements.reserve(issues.size());
-    for (const auto &issue : issues) {
-        requirements.append(requirementFromIssue(issue));
+    for (auto &issue : issues) {
+        requirements.append(Requirement(issue));
     }
     Q_EMIT listOfRequirements(requirements);
-}
-
-Requirement GitLabRequirements::requirementFromIssue(const gitlab::Issue &issue)
-{
-    QStringList tags = issue.mLabels;
-    tags.removeAll(k_requirementsTypeLabel);
-    return { parseReqIfId(issue), issue.mTitle, issue.mDescription, issue.mIssueIID, tags, issue.mUrl };
-}
-
-QString GitLabRequirements::parseReqIfId(const gitlab::Issue &issue)
-{
-    static const QString keyWord("#reqid");
-    for (const QString &line : issue.mDescription.split("\n")) {
-        QString id = line.trimmed();
-        if (id.trimmed().startsWith(keyWord)) {
-            id = id.sliced(keyWord.length());
-            id = id.trimmed();
-            if (id.startsWith(":")) {
-                id = id.sliced(1).trimmed();
-            }
-
-            // Remove quotes if there
-            if (id.startsWith("\"")) {
-                id = id.sliced(1);
-            }
-            if (id.endsWith("\"")) {
-                id.chop(1);
-            }
-            return id;
-        }
-    }
-    return QString::number(issue.mIssueIID);
 }
 
 /*!
@@ -78,4 +46,4 @@ QStringList GitLabRequirements::tagsFromLabels(const QList<gitlab::Label> &label
     }
     return tags;
 }
-}
+} // namespace requirement

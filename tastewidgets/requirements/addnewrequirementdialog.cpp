@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2023 European Space Agency - <maxime.perrotin@esa.int>
+   Copyright (C) 2025 European Space Agency - <maxime.perrotin@esa.int>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -16,28 +16,64 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 */
 #include "addnewrequirementdialog.h"
 
-#include "requirementsmodelbase.h"
-#include "ui_addnewrequirementdialog.h"
+#include "ui_basicrequirementdialog.h"
 
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QPushButton>
+#include "requirementsmodelbase.h"
 
 namespace requirement {
 
-AddNewRequirementDialog::AddNewRequirementDialog(RequirementsModelBase *model, QWidget *parent)
+AddNewRequirementDialog::AddNewRequirementDialog(RequirementsModelBase *model, Requirement *requirement, QWidget *parent)
     : QDialog(parent)
     , m_model(model)
-    , ui(new Ui::AddNewRequirementDialog)
+    , m_requirement(requirement)
+    , ui(new Ui::BasicRequirementDialog)
 {
     ui->setupUi(this);
-    ui->gridLayout->setVerticalSpacing(10);
     auto sizePolicy = ui->notUniqueIDLabel->sizePolicy();
     sizePolicy.setRetainSizeWhenHidden(true);
     ui->notUniqueIDLabel->setSizePolicy(sizePolicy);
     ui->notUniqueIDLabel->setVisible(false);
     connect(ui->titleLineEdit, &QLineEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
     connect(ui->idLineEdit, &QLineEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
+    connect(ui->descriptionTextEdit, &QTextEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
+
+    connect(ui->addRefButton, &QPushButton::clicked, this, &AddNewRequirementDialog::addParent);
+    connect(ui->removeRefButton, &QPushButton::clicked, this, &AddNewRequirementDialog::removeParent);
+
+    ui->typeComboBox->addItems(TypeList);
+    ui->priorityComboBox->addItems(PriorityList);
+    ui->statusComboBox->addItems(StatusList);
+    ui->valStatusComboBox->addItems(StatusList);
+    ui->complianceComboBox->addItems(ComplianceList);
+    ui->complianceStatusComboBox->addItems(StatusList);
+
+    ui->virtualassistantButton->hide();
+    ui->browserButton->hide();
+    ui->idLineEdit->setReadOnly(false);
+
+    ui->availableListWidget->addItems(model->unreferencedFromId(QString("")));
+    ui->availableListWidget->sortItems();
+
+    enum RequirementsModelBase::modelType type = model->getState();
+
+    if(type == RequirementsModelBase::SRS)
+    {
+        ui->specificationComboBox->setCurrentIndex(0);
+//        ui->specificationComboBox->setEnabled(false);
+        ui->versionLabel->hide();
+        ui->versionLineEdit->hide();
+    }
+
+    if(type == RequirementsModelBase::SSS)
+    {
+        ui->specificationComboBox->setCurrentIndex(1);
+//        ui->specificationComboBox->setEnabled(false);
+    }
+
+
     updateOkButton();
 }
 
@@ -46,38 +82,94 @@ AddNewRequirementDialog::~AddNewRequirementDialog()
     delete ui;
 }
 
-/*!
- * Returns the title of the requirements.
- * A title is mandatory to add a requirement
- */
-QString AddNewRequirementDialog::title() const
+#if 0
+void AddNewRequirementDialog::showVirtualAssistantDialog()
 {
-    return ui->titleLineEdit->text();
+    QString reqIfId = ui->idLineEdit->text();
+    QString description = ui->descriptionTextEdit->toPlainText();
+    QScopedPointer<VirtualAssistantDialog> dialog(new VirtualAssistantDialog(reqIfId, description));
+    dialog->setModal(true);
+    const auto ret = dialog->exec();
+}
+#endif
+void AddNewRequirementDialog::updateRequirement()
+{
+    m_requirement->m_id = ui->idLineEdit->text();
+    m_requirement->m_type = ui->typeComboBox->currentText();
+    m_requirement->m_longName = ui->titleLineEdit->text();
+    m_requirement->m_description = ui->descriptionTextEdit->toPlainText();
+    m_requirement->m_priority = ui->priorityComboBox->currentText();
+    m_requirement->m_status = ui->statusComboBox->currentText();
+    m_requirement->m_justification = ui->justificationTextEdit->toPlainText();
+    m_requirement->m_valDescription = ui->valDescriptionTextEdit->toPlainText();
+    m_requirement->m_valStatus = ui->valStatusComboBox->currentText();
+    m_requirement->m_valEvidence = ui->valEvidenceTextEdit->toPlainText();
+    m_requirement->m_compliance = ui->complianceComboBox->currentText();
+    m_requirement->m_complianceStatus = ui->complianceStatusComboBox->currentText();
+    m_requirement->m_note = ui->noteTextEdit->toPlainText();
+
+    QStringList val;
+    if (ui->testCheckBox->isChecked()) val << QString("test");
+    if (ui->analysisCheckBox->isChecked()) val << QString("analysis");
+    if (ui->inspectionCheckBox->isChecked()) val << QString("inspection");
+    if (ui->designCheckBox->isChecked()) val << QString("design");
+    m_requirement->m_validation = val;
+
+    if (ui->specificationComboBox->currentIndex() == 1)
+    {
+        m_requirement->m_reqType = k_SSSLabel;
+        m_requirement->m_valVersion = ui->versionLineEdit->text();
+        switch(m_model->getState())
+        {
+        case RequirementsModelBase::SRS:
+            m_model->changeModelState(RequirementsModelBase::Both);
+            break;
+        case RequirementsModelBase::Empty:
+            m_model->changeModelState(RequirementsModelBase::SSS);
+            break;
+        }
+    }
+    else
+    {
+        m_requirement->m_reqType = k_SRSLabel;
+        switch(m_model->getState())
+        {
+        case RequirementsModelBase::SSS:
+            m_model->changeModelState(RequirementsModelBase::Both);
+            break;
+        case RequirementsModelBase::Empty:
+            m_model->changeModelState(RequirementsModelBase::SRS);
+            break;
+        }
+    }
+
+    m_requirement->m_parents = QStringList();
+
+    int count = ui->parentsListWidget->count();
+    for ( int index = 0; index < count; index++ ) {
+        m_requirement->m_parents << ui->parentsListWidget->item(index)->text();
+    }
+
 }
 
-/*!
- * Contains the main content of the requirement
- */
-QString AddNewRequirementDialog::description() const
+void AddNewRequirementDialog::addParent()
 {
-    return ui->descriptionTextEdit->toPlainText();
+    if(ui->availableListWidget->count() && ui->availableListWidget->currentItem())
+    {
+        ui->parentsListWidget->addItem(ui->availableListWidget->takeItem(ui->availableListWidget->currentRow())->text());
+        ui->parentsListWidget->sortItems();
+    }
+    return;
 }
 
-/*!
- * Returns the ID of the requirements.
- * An ID is mandatory to add a requirement
- */
-QString AddNewRequirementDialog::reqIfId() const
+void AddNewRequirementDialog::removeParent()
 {
-    return ui->idLineEdit->text();
-}
-
-/*!
- * Requirements are classified by different test methods. There is always only one test method.
- */
-QString AddNewRequirementDialog::testMethod() const
-{
-    return ui->testMethodBox->currentText();
+     if(ui->parentsListWidget->count() && ui->parentsListWidget->currentItem())
+     {
+         ui->availableListWidget->addItem(ui->parentsListWidget->takeItem(ui->parentsListWidget->currentRow())->text());
+         ui->availableListWidget->sortItems();
+     }
+     return;
 }
 
 void AddNewRequirementDialog::updateOkButton()
@@ -87,7 +179,7 @@ void AddNewRequirementDialog::updateOkButton()
         return;
     }
 
-    bool reqIfExists = m_model->reqIfIDExists(ui->idLineEdit->text());
+    bool reqIfExists = m_model->reqIfIDExists((const QString)QString(ui->idLineEdit->text()));
     ui->notUniqueIDLabel->setVisible(reqIfExists);
     okButton->setDisabled(ui->titleLineEdit->text().isEmpty() || ui->idLineEdit->text().isEmpty() || reqIfExists);
 }

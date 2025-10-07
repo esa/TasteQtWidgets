@@ -3,7 +3,45 @@
 #include <QJsonArray>
 #include <QString>
 
+#include <iostream>
+
 using namespace gitlab;
+
+Issue::Issue()
+{
+    mUrl = QUrl();
+    mIssueID = 0;
+    mIssueIID = 0;
+    mTitle = QString();
+    mDescription = QString();
+    mAuthor = QString();
+    mAssignee = QString();
+    mState = QString();
+    mLabels.clear();
+//    mIssueType = QString();
+    mCreatedAt = QDateTime::currentDateTime();
+    mUpdatedAt = QDateTime::currentDateTime();
+    mNotesCount = 0;
+}
+
+Issue::Issue(const Issue &issue) :
+    mUrl(issue.mUrl),
+    mIssueID(issue.mIssueID),
+    mIssueIID(issue.mIssueIID),
+    mTitle(issue.mTitle),
+    mDescription(issue.mDescription),
+    mAuthor(issue.mAuthor),
+    mAssignee(issue.mAssignee),
+    mState(issue.mState),
+    mLabels(issue.mLabels),
+//    mIssueType(issue.mIssueType),
+    mCreatedAt(issue.mCreatedAt),
+    mUpdatedAt(issue.mUpdatedAt),
+    mNotesCount(issue.mNotesCount)
+{
+//    std::cout << "Issue copied" << mTitle.toStdString() << std::endl;
+}
+
 
 Issue::Issue(const QJsonObject &issue)
 {

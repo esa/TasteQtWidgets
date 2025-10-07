@@ -90,7 +90,7 @@ QUrl UrlComposer::composeEditIssueUrl(const int &projectID, const int &issueID, 
         data.insert("state_event", state_event);
     }
     if (!labels.isEmpty()) {
-        data.insert("labels", labels);
+        data.insert("labels", labels.join(","));
     }
 
     QUrl url(address);
@@ -123,7 +123,7 @@ QUrl UrlComposer::composeProjectUrl(const QString &projectName) const
 
 QUrl UrlComposer::composeGroupUrl(const QString &groupName) const
 {
-    QString address = composeUrl(UrlComposer::UrlTypes::Groups);
+    QString address = composeUrl(UrlComposer::UrlTypes::Projects);
 
     const QMap<QString, QVariant> data = {
         { "search", groupName } // Search project name
@@ -141,15 +141,6 @@ QUrl UrlComposer::composeCreateProjectUrl(const QString &projectName, const QStr
 
     QUrl url(address);
     url.setQuery(setQuery(data));
-    return url;
-}
-
-QUrl UrlComposer::composeGroupProjectsUrl(const QString &groupID) const
-{
-    QString address = composeUrl(UrlComposer::UrlTypes::GroupProjects);
-    address = address.arg(groupID);
-
-    QUrl url(address);
     return url;
 }
 
@@ -173,10 +164,6 @@ QString UrlComposer::composeUrl(UrlTypes target) const
     }
     case UrlComposer::UrlTypes::Groups: {
         address += "/groups";
-        break;
-    }
-    case UrlComposer::UrlTypes::GroupProjects: {
-        address += "/groups/%1/projects";
         break;
     }
     case UrlComposer::UrlTypes::ProjectLabels: {

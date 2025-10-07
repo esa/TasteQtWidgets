@@ -99,4 +99,9 @@ void CredentialWidget::openTokenSettingsPage()
     QDesktopServices::openUrl(url);
 }
 
+void CredentialWidget::setStatus(const QString &status)
+{
+    ui->statusLabel->setText(status);
+}
+
 } // namespace tracecommon

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2023 European Space Agency - <maxime.perrotin@esa.int>
+   Copyright (C) 2025 European Space Agency - <maxime.perrotin@esa.int>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -18,8 +18,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include "requirementswidget.h"
 
 #include "addnewrequirementdialog.h"
+#include "editrequirementdialog.h"
+#include "selectsourcedialog.h"
 #include "requirementsmanager.h"
-#include "requirementsmodelbase.h"
+#include "requirementsmodelcommon.h"
+#include "virtualassistantdialog.h"
 #include "ui_requirementswidget.h"
 #include "widgetbar.h"
 
@@ -30,6 +33,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include <QMessageBox>
 #include <QTableView>
 #include <QToolButton>
+#include <QtConcurrent>
+#include <QFuture>
+#include <QtCore>
+#include <QInputDialog>
+#include <QDomDocument>
+#include "xlsxdocument.h"
+#include "xlsxrichstring.h"
+#include "xlsxworkbook.h"
+#include "xlsxformat.h"
+
+
+#include "requirementsmodelbase.h"
 
 namespace requirement {
 const int kIconSize = 16;
@@ -38,6 +53,10 @@ RequirementsWidget::RequirementsWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::RequirementsWidget)
     , m_widgetBar(new tracecommon::WidgetBar(this))
+    , m_checkingServer(false)
+    , m_originalHandler(nullptr)
+    , m_embedded(false)
+    , m_apply(false)
 {
     ui->setupUi(this);
     m_textFilterModel.setDynamicSortFilter(true);
@@ -47,7 +66,7 @@ RequirementsWidget::RequirementsWidget(QWidget *parent)
     m_tagFilterModel.setDynamicSortFilter(true);
     m_tagFilterModel.setSourceModel(&m_textFilterModel);
 
-    m_checkedModel.setFilterKeyColumn(RequirementsModelBase::CHECKED);
+    m_checkedModel.setFilterKeyColumn(RequirementsModelCommon::CHECKED);
     m_checkedModel.setSourceModel(&m_tagFilterModel);
 
     ui->allRequirements->setModel(&m_tagFilterModel);
@@ -58,20 +77,23 @@ RequirementsWidget::RequirementsWidget(QWidget *parent)
 
     connect(ui->allRequirements->selectionModel(), &QItemSelectionModel::selectionChanged, this,
             &RequirementsWidget::modelSelectionChanged);
-    connect(ui->allRequirements, &QTableView::doubleClicked, this, &RequirementsWidget::openIssueLink);
-    connect(ui->refreshButton, &QPushButton::clicked, this, &RequirementsWidget::setLoginData);
+    connect(ui->allRequirements, &QTableView::doubleClicked, this, &RequirementsWidget::showEditRequirementDialog);
+    connect(ui->clearButton, &QPushButton::clicked, this, &RequirementsWidget::onClear);
+    connect(ui->vaButton, &QPushButton::clicked, this, &RequirementsWidget::showVirtualAssistantDialog);
     connect(ui->createRequirementButton, &QPushButton::clicked, this, &RequirementsWidget::showNewRequirementDialog);
+    connect(ui->exportRequirementsButton, &QPushButton::clicked, this, &RequirementsWidget::showExportRequirementsDialog);
+    connect(ui->importRequirementsButton, &QPushButton::clicked, this, &RequirementsWidget::showImportRequirementsDialog);
     connect(ui->removeRequirementButton, &QPushButton::clicked, this, &RequirementsWidget::removeRequirement);
-    connect(ui->credentialWidget, &tracecommon::CredentialWidget::urlChanged, this,
-            &RequirementsWidget::onChangeOfCredentials);
-    connect(ui->credentialWidget, &tracecommon::CredentialWidget::tokenChanged, this,
-            &RequirementsWidget::onChangeOfCredentials);
+    connect(ui->applyPushButton, &QPushButton::clicked, this, &RequirementsWidget::applyEdits);
     connect(ui->filterLineEdit, &QLineEdit::textChanged, &m_textFilterModel,
             &QSortFilterProxyModel::setFilterFixedString);
-    connect(ui->filterButton, &QPushButton::clicked, this, &RequirementsWidget::toggleShowUsedRequirements);
 
-    ui->filterButton->setIcon(QPixmap(":/tracecommonresources/icons/filter_icon.svg"));
+    connect(this, &RequirementsWidget::loadGitLab, this, &RequirementsWidget::setLoginData);
+
+//    m_originalHandler = qInstallMessageHandler(displayProgress);
+
     ui->verticalLayout->insertWidget(0, m_widgetBar);
+    ui->textEdit->hide();
 }
 
 RequirementsWidget::~RequirementsWidget()
@@ -79,32 +101,38 @@ RequirementsWidget::~RequirementsWidget()
     delete ui;
 }
 
+
+
 void RequirementsWidget::setManager(RequirementsManager *manager)
 {
     m_reqManager = manager;
-    connect(m_reqManager, &RequirementsManager::projectIDChanged, this, &RequirementsWidget::updateProjectReady);
-    connect(m_reqManager, &RequirementsManager::requirementAdded, this, &RequirementsWidget::requestRequirements);
-    connect(m_reqManager, &RequirementsManager::requirementClosed, this, &RequirementsWidget::requestRequirements);
-    connect(m_reqManager, &RequirementsManager::busyChanged, this, &RequirementsWidget::updateServerStatus);
+    connect(m_reqManager, &RequirementsManager::projectIDChanged, this, &RequirementsWidget::updateServerStatus);
     connect(m_reqManager, &RequirementsManager::listOfTags, this, &RequirementsWidget::fillTagBar);
+    connect(m_reqManager, &RequirementsManager::reportProgress, this, &RequirementsWidget::progress);
     connect(m_reqManager, &RequirementsManager::connectionError, this, [this](const QString &error) {
         updateServerStatus();
         QMessageBox::warning(this, tr("Connection error"), tr("Connection failed for this error:\n%1").arg(error));
+        ui->allRequirements->show();
+        ui->textEdit->hide();
     });
     connect(m_reqManager, &RequirementsManager::fetchingRequirementsEnded, m_reqManager,
             &RequirementsManager::requestTags);
-    connect(m_reqManager, &tracecommon::IssuesManager::projectUrlChanged, ui->credentialWidget,
-            &tracecommon::CredentialWidget::setUrl);
-    connect(m_reqManager, &tracecommon::IssuesManager::tokenChanged, ui->credentialWidget,
-            &tracecommon::CredentialWidget::setToken);
 
     if (!m_reqManager->projectUrl().isEmpty()) {
-        ui->credentialWidget->setUrl(m_reqManager->projectUrl());
         m_requirementsUrl = m_reqManager->projectUrl();
     }
+
     if (!m_reqManager->token().isEmpty()) {
-        ui->credentialWidget->setToken(m_reqManager->token());
+        m_requirementsToken = m_reqManager->token();
     }
+
+}
+
+
+void RequirementsWidget::setModel(RequirementsModelCommon *model)
+{
+    RequirementsModelBase *derivedModel = new RequirementsModelBase(model);
+    setModel(derivedModel);
 }
 
 void RequirementsWidget::setModel(RequirementsModelBase *model)
@@ -114,45 +142,41 @@ void RequirementsWidget::setModel(RequirementsModelBase *model)
 
     ui->allRequirements->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
     ui->allRequirements->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
-    ui->allRequirements->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Interactive);
-    ui->allRequirements->setColumnWidth(1, width() - ui->allRequirements->width());
 
-    connect(m_model, &requirement::RequirementsModelBase::rowsInserted, this,
-            [this]() { ui->allRequirements->resizeRowsToContents(); });
-    connect(m_model, &requirement::RequirementsModelBase::dataChanged, [this](const QModelIndex &index) {
-        if (index.column() == RequirementsModelBase::CHECKED) {
-            bool isChecked = m_model->data(index, Qt::CheckStateRole).toBool();
-            QModelIndex reqID_index = m_model->index(index.row(), RequirementsModelBase::REQUIREMENT_ID);
-            QString ReqID = m_model->data(reqID_index, Qt::DisplayRole).toString();
-            Q_EMIT requirementSelected(ReqID, isChecked);
-        }
-    });
+    ui->allRequirements->setColumnWidth(0, 160);
+    ui->allRequirements->setColumnWidth(1, 500);
+
+    connect(m_model, &requirement::RequirementsModelBase::exportCompleted, this, &RequirementsWidget::workingCompleted);
+
 }
 
 QUrl RequirementsWidget::url() const
 {
-    return ui->credentialWidget->url();
+    return m_requirementsUrl;
 }
 
 void RequirementsWidget::setUrl(const QUrl &url)
 {
-    if (ui->credentialWidget->url() == url) {
-        return;
-    }
-    ui->credentialWidget->setUrl(url.toString());
+    m_targetUrl = url.toString();
+    onChangeOfCredentials(url.toString(), m_requirementsToken);
 }
 
 QString RequirementsWidget::token() const
 {
-    return ui->credentialWidget->token();
+    return m_requirementsToken;
 }
 
 void RequirementsWidget::setToken(const QString &token)
 {
-    if (ui->credentialWidget->token() == token) {
-        return;
-    }
-    ui->credentialWidget->setToken(token);
+    m_targetToken = token;
+    onChangeOfCredentials(m_requirementsUrl, token);
+}
+
+void RequirementsWidget::refresh()
+{
+    m_model->changeModelState(RequirementsModelBase::Both);
+    setModelTypeLabel(m_model->getState());
+    setLoginData();
 }
 
 QHeaderView *RequirementsWidget::horizontalTableHeader() const
@@ -160,20 +184,67 @@ QHeaderView *RequirementsWidget::horizontalTableHeader() const
     return ui->allRequirements->horizontalHeader();
 }
 
-void RequirementsWidget::onChangeOfCredentials()
+void RequirementsWidget::onChangeOfCredentials(const QString url, const QString token)
 {
     if (!m_reqManager) {
         return;
     }
 
-    m_requirementsUrl = ui->credentialWidget->url().toString();
-    Q_EMIT requirementsUrlChanged(m_requirementsUrl);
-    const QString newToken(ui->credentialWidget->token());
-    if (m_requirementsUrl.isEmpty() || newToken.isEmpty()) {
+    qDebug() << "Set Change of credentials called";
+
+    m_checkingServer = true;
+
+    m_requirementsUrl = url;
+    m_requirementsToken = token;
+
+    qputenv("ESA_LOCAL_GITLAB_PROJECT", m_requirementsUrl.toUtf8());
+    qputenv("ESA_LOCAL_GITLAB_TOKEN", m_requirementsToken.toUtf8());
+
+    if (m_requirementsUrl.isEmpty()) {
         return;
     }
-    m_reqManager->setCredentials(m_requirementsUrl, newToken);
-    Q_EMIT requirementsCredentialsChanged(m_requirementsUrl, newToken);
+
+    m_reqManager->setRequirementsCredentials(m_requirementsUrl, m_requirementsToken);
+}
+
+void RequirementsWidget::applyEdits()
+{
+    if (!m_reqManager || !m_model) {
+        return;
+    }
+
+    if (m_embedded)
+    {
+        m_reqManager->setRequirementsCredentials(m_targetUrl, m_targetToken);
+
+        QApplication::processEvents();
+
+        while (m_reqManager->isBusy()) {
+            QApplication::processEvents();
+        }
+    }
+
+    bool allowDelete = false;
+
+    if (ui->sourceLineEdit->text().compare(m_targetUrl)==0) {
+        allowDelete = true;
+    }
+
+    if (m_reqManager->hasValidProjectID()) {
+        m_apply = true;
+        ui->textEdit->clear();
+        ui->textEdit->show();
+        ui->allRequirements->hide();
+        m_model->applyGitLabEdits(allowDelete);
+    }
+}
+
+void RequirementsWidget::progress(const QString &text)
+{
+    QString str(ui->textEdit->toPlainText());
+
+    str.append(QString("%1\n").arg(text));
+    ui->textEdit->setText(str);
 }
 
 void RequirementsWidget::requestRequirements()
@@ -182,45 +253,65 @@ void RequirementsWidget::requestRequirements()
         return;
     }
 
-    if (m_reqManager && m_reqManager->hasValidProjectID()) {
+    if (m_reqManager->hasValidProjectID()) {
         m_model->clearRequirements();
-        m_reqManager->requestAllRequirements();
+        m_reqManager->requestAllRequirements("");
+    }
+}
+
+void RequirementsWidget::workingCompleted()
+{
+    if(m_embedded && m_apply) {
+        QApplication::quit();
+    } else {
+        ui->allRequirements->show();
+        ui->textEdit->hide();
+        m_apply = false;
     }
 }
 
 void RequirementsWidget::setLoginData()
 {
-    if (!m_reqManager || m_reqManager->isBusy()) {
-        return;
-    }
+    bool before = false;
 
-    ui->serverStatusLabel->setPixmap({});
-
-    const QUrl currUrl(ui->credentialWidget->url());
-    const QString currToken(ui->credentialWidget->token());
-
-    if (currUrl.isEmpty() || currToken.isEmpty()) {
-        ui->serverStatusLabel->setPixmap({});
-        return;
-    }
-    m_model->clearRequirements();
-    if (currUrl == m_reqManager->projectUrl() && currToken == m_reqManager->token()) {
-
-        m_reqManager->requestAllRequirements();
-        return;
-    }
-
-    ui->serverStatusLabel->setToolTip(tr("Checking connection to the server"));
-    m_reqManager->setCredentials(currUrl.toString(), currToken);
-}
-
-void RequirementsWidget::updateServerStatus()
-{
     if (!m_reqManager) {
         return;
     }
 
-    ui->refreshButton->setEnabled(!m_reqManager->isBusy());
+    while (m_reqManager->isBusy()) {
+        QApplication::processEvents();
+    }
+
+    if (m_requirementsUrl.isEmpty() || m_requirementsToken.isEmpty()) {
+        qDebug() << "login empty";
+        return;
+    }
+
+    m_model->clearRequirements();
+
+    if (m_requirementsUrl == m_reqManager->projectUrl() && m_requirementsToken == m_reqManager->token()) {
+        m_reqManager->requestAllRequirements("");
+        ui->sourceLineEdit->setText(m_requirementsUrl);
+        ui->applyPushButton->setEnabled(true);
+        qDebug() << "login matches";
+        return;
+    }
+
+    ui->sourceLineEdit->setText("");
+    ui->applyPushButton->setEnabled(false);
+    qDebug() << "login doesn't match";
+    m_reqManager->setRequirementsCredentials(m_requirementsUrl, m_requirementsToken);
+}
+
+void RequirementsWidget::updateServerStatus()
+{
+    qDebug() << "Widget Checking server ";
+    if (!m_reqManager) {
+        return;
+    }
+
+    m_checkingServer = false;
+
     const QCursor busyCursor(Qt::WaitCursor);
     if (m_reqManager->isBusy()) {
         if (ui->allRequirements->cursor() != busyCursor) {
@@ -231,28 +322,6 @@ void RequirementsWidget::updateServerStatus()
             ui->allRequirements->unsetCursor();
         }
     }
-
-    const bool connectionOk = (m_reqManager->hasValidProjectID());
-    if (connectionOk) {
-        ui->serverStatusLabel->setPixmap(
-                QPixmap(":/tracecommonresources/icons/check_icon.svg").scaled(kIconSize, kIconSize));
-        ui->serverStatusLabel->setToolTip(tr("Connection to the server is ok"));
-    } else {
-        ui->serverStatusLabel->setPixmap(
-                QPixmap(":/tracecommonresources/icons/uncheck_icon.svg").scaled(kIconSize, kIconSize));
-        ui->serverStatusLabel->setToolTip(tr("Connection to the server failed"));
-    }
-}
-
-void RequirementsWidget::updateProjectReady()
-{
-    if (!m_reqManager) {
-        ui->createRequirementButton->setEnabled(false);
-        return;
-    }
-
-    ui->createRequirementButton->setEnabled(m_reqManager->hasValidProjectID());
-    requestRequirements();
 }
 
 void RequirementsWidget::openIssueLink(const QModelIndex &index)
@@ -260,14 +329,58 @@ void RequirementsWidget::openIssueLink(const QModelIndex &index)
     QDesktopServices::openUrl(index.data(tracecommon::TraceCommonModelBase::IssueLinkRole).toString());
 }
 
-void RequirementsWidget::toggleShowUsedRequirements()
+
+void RequirementsWidget::showVirtualAssistantDialog()
 {
-    if (ui->allRequirements->model() == &m_checkedModel) {
-        ui->allRequirements->setModel(&m_tagFilterModel);
-        ui->filterButton->setIcon(QPixmap(":/tracecommonresources/icons/filter_icon.svg"));
-    } else {
-        ui->allRequirements->setModel(&m_checkedModel);
-        ui->filterButton->setIcon(QPixmap(":/tracecommonresources/icons/disable_filter_icon.svg"));
+    QScopedPointer<VirtualAssistantDialog> dialog(new VirtualAssistantDialog(m_model));
+    dialog->setModal(true);
+    const auto ret = dialog->exec();
+}
+
+
+void RequirementsWidget::showNewRequirementDialog()
+{
+    if (!m_reqManager || !m_model) {
+        return;
+    }
+
+    Requirement requirement;
+
+    QScopedPointer<AddNewRequirementDialog> dialog(new AddNewRequirementDialog(m_model.get(), &requirement));
+    dialog->setModal(true);
+    const auto ret = dialog->exec();
+    if (ret == QDialog::Accepted) {
+        dialog->updateRequirement();
+        setModelTypeLabel(m_model->getState());
+        requirement.updateIssue(m_model->getRequirements());
+        m_model->createModelRequirement(requirement);
+    }
+}
+
+void RequirementsWidget::showEditRequirementDialog(const QModelIndex &index)
+{
+    if (!m_reqManager || !m_model) {
+        return;
+    }
+
+    const auto &currentIndex = ui->allRequirements->selectionModel()->currentIndex();
+    if (currentIndex.isValid()) {
+        const QString reqIfID = currentIndex.data(RequirementsModelCommon::ReqIfIdRole).toString();
+        Requirement requirement = m_model->requirementFromId(reqIfID);
+
+        if (requirement.isValid()) {
+            QScopedPointer<EditRequirementDialog> dialog(new EditRequirementDialog(m_model.get(), &requirement));
+            dialog->setModal(true);
+            const auto ret = dialog->exec();
+            if (ret == QDialog::Accepted) {
+                dialog->updateRequirement();
+                requirement.updateIssue(m_model->getRequirements());
+                m_model->editModelRequirement(requirement);
+            }
+        }
+    }
+    else {
+        QMessageBox::warning(this, tr("Index Error"), tr("Invalid entry %1 selected").arg(index.row()));
     }
 }
 
@@ -282,6 +395,7 @@ void RequirementsWidget::fillTagBar(const QStringList &tags)
         return false;
     });
     m_tagButtons.erase(it, m_tagButtons.end());
+//    tags.sort();
 
     for (const QString &tag : tags) {
         if (!tagButtonExists(tag)) {
@@ -312,20 +426,267 @@ bool RequirementsWidget::tagButtonExists(const QString &tag) const
             m_tagButtons.begin(), m_tagButtons.end(), [&tag](const auto *btn) { return btn->text() == tag; });
 }
 
-void RequirementsWidget::showNewRequirementDialog() const
+void RequirementsWidget::showExportRequirementsDialog() const
 {
     if (!m_reqManager || !m_model) {
         return;
     }
 
-    QScopedPointer<AddNewRequirementDialog> dialog(new AddNewRequirementDialog(m_model.get()));
+    QScopedPointer<SelectSourceDialog> dialog(new SelectSourceDialog(exportDialogTitle, exportDialogLabel, m_requirementsUrl, m_requirementsToken, m_model->getState()));
     dialog->setModal(true);
+
     const auto ret = dialog->exec();
+
     if (ret == QDialog::Accepted) {
-        m_reqManager->createRequirement(
-                dialog->title(), dialog->reqIfId(), dialog->description(), dialog->testMethod());
+//        m_model->setExportType(dialog->type());
+
+        switch(dialog->result()) {
+        case SelectSourceDialog::GitLabSelected:
+
+            qDebug() << "GitLab Export " << dialog->getToken() << dialog->getUrl();
+            ui->textEdit->clear();
+            ui->textEdit->show();
+            ui->allRequirements->hide();
+            m_model->exportGitLabRequirements(dialog->getUrl(), dialog->getToken(), dialog->type());
+            break;
+
+        case SelectSourceDialog::ReqIfSelected:
+            showExportReqIfFileRequirementsDialog(dialog->type());
+            break;
+
+        case SelectSourceDialog::ExcelSelected:
+            showExportExcelFileRequirementsDialog(dialog->type());
+            break;
+        }
     }
 }
+
+void RequirementsWidget::showExportReqIfFileRequirementsDialog(enum RequirementsModelBase::modelType type) const
+{
+    QFileDialog::Options options;
+    options |= QFileDialog::DontUseNativeDialog;
+    QString selectedFilter;
+    QString dialogHeader;
+
+    if(m_model->getState() == RequirementsModelBase::SSS) {
+        dialogHeader = tr("Export ReqIf SSS Requirements");
+    } else {
+        dialogHeader = tr("Export ReqIf SRS Requirements");
+    }
+
+    QFileDialog dialog;
+
+    dialog.setDefaultSuffix(QString(".reqif"));
+
+    QString fileName = dialog.getSaveFileName(nullptr,
+                            dialogHeader,
+                            QDir::homePath(),
+                            tr("ReqIf (*.reqif)"),
+                            &selectedFilter,
+                            options);
+
+    if (!fileName.isEmpty()) {
+        QFileInfo fileinfo(fileName);
+        QString suffix = fileinfo.completeSuffix();
+
+        if (suffix.isEmpty()) {
+            fileName.append(".reqif");
+        }
+
+        int rowCount = m_model->rowCount(QModelIndex());
+
+        if (rowCount) {
+            ReqIf reqIf(fileName, m_model, type);
+            reqIf.createReqIf();
+            reqIf.writeReqIfFile();
+        }
+    }
+}
+
+void RequirementsWidget::showExportExcelFileRequirementsDialog(enum RequirementsModelBase::modelType type) const
+{
+    QFileDialog::Options options;
+    options |= QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite;
+    QString selectedFilter;
+    QString dialogHeader;
+
+    if(type == RequirementsModelBase::SSS) {
+        dialogHeader = tr("Export Excel SSS Requirements");
+    } else {
+        dialogHeader = tr("Export Excel SRS Requirements");
+    }
+
+    QFileDialog dialog;
+
+    dialog.setDefaultSuffix(QString(".xlsx"));
+
+    QString fileName = dialog.getSaveFileName(nullptr,
+                            dialogHeader,
+                            QDir::homePath(),
+                            tr("Excel (*.xlsx)"),
+                            &selectedFilter,
+                            options);
+
+    if (!fileName.isEmpty()) {
+
+        QFileInfo fileinfo(fileName);
+        QString suffix = fileinfo.completeSuffix();
+
+        if (suffix.isEmpty()) {
+            fileName.append(".xlsx");
+        }
+
+        fileinfo.setFile(fileName);
+
+        // check if file exists and if yes: Is it really a file and not a directory?
+        if (fileinfo.exists() && fileinfo.isFile()) {
+            if(type == RequirementsModelBase::SSS) {
+                dialogHeader = tr("Update Existing SSS Requirements");
+            } else {
+                dialogHeader = tr("Update Existing SRS Requirements");
+            }
+
+            QString dialogBody;
+            dialogBody = tr("Are you sure you want to update the existing requirements?    ");
+            dialogBody.append(QString("\n\n%1").arg(fileinfo.fileName()));
+
+            QMessageBox::StandardButton reply;
+            reply = QMessageBox::question(nullptr, dialogHeader, dialogBody, QMessageBox::Yes | QMessageBox::No);
+            if (reply == QMessageBox::No) {
+                return;
+            }
+        } else {
+            Excel::createDefault(fileName, type);
+        }
+
+        int rowCount = m_model->rowCount(QModelIndex());
+
+        if (rowCount) {
+            Excel excel(fileName, m_model, type);
+            excel.exportExcel();
+        }
+    }
+}
+
+void RequirementsWidget::setModelTypeLabel(enum RequirementsModelBase::modelType type)
+{
+    switch(type) {
+    case RequirementsModelBase::Empty:
+        ui->modelTypeLabel->setText("Empty");
+        break;
+    case RequirementsModelBase::SRS:
+        ui->modelTypeLabel->setText("SRS");
+        break;
+    case RequirementsModelBase::SSS:
+        ui->modelTypeLabel->setText("SSS");
+        break;
+    case RequirementsModelBase::Both:
+        ui->modelTypeLabel->setText("Both");
+        break;
+    default:
+        ui->modelTypeLabel->setText("Empty");
+        break;
+    }
+}
+
+void RequirementsWidget::showImportRequirementsDialog()
+{
+    if (!m_reqManager || !m_model) {
+        return;
+    }
+
+    QScopedPointer<SelectSourceDialog> dialog(new SelectSourceDialog(importDialogTitle, importDialogLabel, m_requirementsUrl, m_requirementsToken, RequirementsModelBase::Both));
+    dialog->setModal(true);
+
+    const auto ret = dialog->exec();
+
+    if (ret == QDialog::Accepted) {
+        switch(dialog->result())
+        {
+            case SelectSourceDialog::GitLabSelected:
+                m_model->changeModelState(dialog->type());
+                setModelTypeLabel(m_model->getState());
+                onChangeOfCredentials(dialog->getUrl(), dialog->getToken());
+                setLoginData();
+                break;
+
+            case SelectSourceDialog::ReqIfSelected:
+                showImportReqIfFileRequirementsDialog(dialog->type());
+                break;
+
+            case SelectSourceDialog::ExcelSelected:
+                showImportExcelFileRequirementsDialog(dialog->type());
+                break;
+        }
+    }
+}
+void RequirementsWidget::showImportReqIfFileRequirementsDialog(enum RequirementsModelBase::modelType type)
+{
+    QFileDialog::Options options;
+    options |= QFileDialog::DontUseNativeDialog;
+    QString selectedFilter;
+    QString dialogHeader;
+
+    if(type == RequirementsModelBase::SSS) {
+        dialogHeader = tr("Import ReqIf SSS Requirements");
+    } else {
+        dialogHeader = tr("Import ReqIf SRS Requirements");
+    }
+
+    QString fileName = QFileDialog::getOpenFileName(nullptr,
+                            dialogHeader,
+                            QDir::homePath(),
+                            tr("ReqIf (*.reqif)"),
+                            &selectedFilter,
+                            options);
+
+     if (!fileName.isEmpty()) {
+
+         ReqIf requif(fileName, m_model);
+         requif.readReqIfFile();
+         requif.importReqIf();
+
+         setModelTypeLabel(m_model->getState());
+         ui->sourceLineEdit->setText(fileName);
+         if(!m_embedded)
+         {
+             ui->applyPushButton->setEnabled(false);
+         }
+     }
+}
+
+void RequirementsWidget::showImportExcelFileRequirementsDialog(enum RequirementsModelBase::modelType type)
+{
+    QFileDialog::Options options;
+    options |= QFileDialog::DontUseNativeDialog;
+    QString selectedFilter;
+    QString dialogHeader;
+
+    if(type == RequirementsModelBase::SSS) {
+        dialogHeader = tr("Import Excel SSS Requirements");
+    } else {
+        dialogHeader = tr("Import Excel SRS Requirements");
+    }
+
+    QString fileName = QFileDialog::getOpenFileName(nullptr,
+                            dialogHeader,
+                            QDir::homePath(),
+                            tr("Excel (*.xlsx)"),
+                            &selectedFilter,
+                            options);
+
+     if (!fileName.isEmpty()) {
+         Excel excel(fileName, m_model, type);
+         excel.importExcel();
+         setModelTypeLabel(m_model->getState());
+         ui->sourceLineEdit->setText(fileName);
+         if(!m_embedded)
+         {
+             ui->applyPushButton->setEnabled(false);
+         }
+     }
+}
+
 /*!
  * \brief removeRequirement takes a look in the selectionModel.
  *        If more than one row is selected returns, otherwise
@@ -343,10 +704,10 @@ void RequirementsWidget::removeRequirement()
     if (reply == QMessageBox::Yes) {
         const auto &currentIndex = ui->allRequirements->selectionModel()->currentIndex();
         if (currentIndex.isValid()) {
-            const QString reqIfID = currentIndex.data(RequirementsModelBase::ReqIfIdRole).toString();
+            const QString reqIfID = currentIndex.data(RequirementsModelCommon::ReqIfIdRole).toString();
             const Requirement requirement = m_model->requirementFromId(reqIfID);
             if (requirement.isValid()) {
-                m_reqManager->removeRequirement(requirement);
+                m_model->deleteModelRequirement(requirement);
             }
         }
     }
@@ -357,5 +718,15 @@ void RequirementsWidget::modelSelectionChanged(const QItemSelection &selected, c
     const bool enabled(selected.indexes().count() > 0);
     ui->removeRequirementButton->setEnabled(enabled);
 }
+
+void RequirementsWidget::onClear()
+{
+    m_model->clearRequirements();
+    m_model->changeModelState(RequirementsModelBase::Empty);
+    setModelTypeLabel(m_model->getState());
+    ui->sourceLineEdit->setText("");
+    ui->applyPushButton->setEnabled(false);
+}
+
 
 }

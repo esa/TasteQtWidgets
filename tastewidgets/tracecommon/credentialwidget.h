@@ -41,6 +41,7 @@ public:
     QUrl url() const;
     void setToken(const QString &token);
     QString token() const;
+    void setStatus(const QString &status);
 
 Q_SIGNALS:
     void urlChanged();
