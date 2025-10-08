@@ -246,8 +246,7 @@ void Excel::exportExcel()
                     m_xlsx.write(line, 2, m_model->data(index, RequirementsModelBase::RoleNames::TypeRole));
                     m_xlsx.write(line, 3, m_model->data(index, RequirementsModelBase::RoleNames::TitleRole));
                     m_xlsx.write(line, 4, m_model->data(index, RequirementsModelBase::RoleNames::DetailDescriptionRole));
-//                  m_xlsx.write(line, 8, m_model->data(index, RequirementsModelBase::RoleNames::ChildrenRole));
-                    m_xlsx.write(line, 4, m_model->data(index, RequirementsModelBase::RoleNames::JustificationRole));
+                    m_xlsx.write(line, 5, m_model->data(index, RequirementsModelBase::RoleNames::JustificationRole));
                     m_xlsx.write(line, 6, m_model->data(index, RequirementsModelBase::RoleNames::NoteRole));
                     m_xlsx.write(line, 7, m_model->data(index, RequirementsModelBase::RoleNames::StatusRole));
                     m_xlsx.write(line, 8, m_model->data(index, RequirementsModelBase::RoleNames::ValidationRole));
@@ -290,7 +289,6 @@ void Excel::exportExcel()
                     m_xlsx.write(line, 3, m_model->data(index, RequirementsModelBase::RoleNames::TitleRole));
                     m_xlsx.write(line, 4, m_model->data(index, RequirementsModelBase::RoleNames::DetailDescriptionRole));
                     m_xlsx.write(line, 5, m_model->data(index, RequirementsModelBase::RoleNames::ParentsRole));
-//                  m_xlsx.write(line, 8, m_model->data(index, RequirementsModelBase::RoleNames::ChildrenRole));
                     m_xlsx.write(line, 6, m_model->data(index, RequirementsModelBase::RoleNames::JustificationRole));
                     m_xlsx.write(line, 7, m_model->data(index, RequirementsModelBase::RoleNames::PriorityRole));
                     m_xlsx.write(line, 8, m_model->data(index, RequirementsModelBase::RoleNames::NoteRole));
