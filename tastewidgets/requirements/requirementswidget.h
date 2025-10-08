@@ -66,34 +66,33 @@ public:
      * The manager to load/save the requirements from the data source (gitlab)
      */
     void setManager(RequirementsManager *manager);
+
     /*!
      * Model for the QTableView to show the requirements
      */
     void setModel(requirement::RequirementsModelBase *model);
-    void setModel(requirement::RequirementsModelCommon *model);
+
     /*!
      * Returns the URL to fetch the requirements from
      */
     QUrl url() const;
+
     /*!
      * \brief RequirementsWidget::setUrl sets the url to fetch the requirements from
      * \param url
      */
     void setUrl(const QUrl &url);
+
     /*!
      * \brief RequirementsWidget::token Returns the token to authenticate for fetching the requirements
      */
     QString token() const;
+
     /*!
      * \brief RequirementsWidget::setToken sets the Token to authenticate for fetching the requirements
      * \param token
      */
     void setToken(const QString &token);
-
-    /*!
-     * refresh the table from the current repo.
-     */
-    void refresh();
 
     /*!
      * A pointer to the table header, so the column geometry can be saved/restored
@@ -154,6 +153,7 @@ private:
     QtMessageHandler m_originalHandler;
     bool m_embedded;
     bool m_apply;
+    bool m_first;
 };
 
 } // namespace requirement

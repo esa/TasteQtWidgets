@@ -24,6 +24,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include <QDialog>
 #include <QThread>
 #include <QProcessEnvironment>
+#include <QDir>
+#include <QFile>
+#include <QSettings>
 
 #include "excel.h"
 
@@ -37,6 +40,25 @@ namespace requirement {
 
 static const QString tmpExcelFile = "/var/tmp/tmpExcelModel.xlsx";
 static const QString vaPath = "/home/taste/Development/VA/virtual-assistant/";
+static const QString CONFIG_PATH = "/.local";
+static const QString CONFIG_FILE = "vaConfig.ini";
+
+static const QString VA_ROOT_PATH = "VaRootPath";
+static const QString CONFIG_FILE_PATH = "ConfigFilePath";
+static const QString QUERY_DEFINITIONS_FILE_PATH = "QueryDefinitionsFilePath";
+static const QString QUERY_DEFINITIONS_BASE_DIRECTORY = "QueryDefinitionsBaseDirectory";
+static const QString VENV_PATH = "VenvPath";
+static const QString VERBOSITY = "Verbosity";
+static const QString TEMP_EXCEL_FILE_PATH = "TempExcelFilePath";
+
+static const QString DEFAULT_VA_ROOT_PATH = "/home/taste/tool-inst/share/virtual-assistant";
+static const QString DEFAULT_CONFIG_FILE_PATH = "data/default_config_corrected.json";
+static const QString DEFAULT_QUERY_DEFINITIONS_FILE_PATH = "data/mbep_queries.json";
+static const QString DEFAULT_QUERY_DEFINITIONS_BASE_DIRECTORY = "data";
+static const QString DEFAULT_VENV_PATH = "venv";
+static const QString DEFAULT_VERBOSITY = "debug";
+static const QString DEFAULT_TEMP_EXCEL_FILE_PATH = "/var/tmp/tmpExcelModel.xlsx";
+
 /*!
    Worker class for launching Ollama Server
  */
@@ -68,6 +90,18 @@ public Q_SLOTS:
     void runVa();
 
 private:
+    void initConfig();
+    void readConfigData();
+    void writeConfigData();
+
+    QString m_vaRootPath;
+    QString m_configFilePath;
+    QString m_queryDefinitionsFilePath;
+    QString m_queryDefinitionsBaseDirectory;
+    QString m_venvPath;
+    QString m_verbosity;
+    QString m_tmpExcelFilePath;
+    QString m_settingsFilePath;
     QProcess *m_vaProcess;
 };
 
@@ -90,6 +124,8 @@ private:
     void onAssignTypeButtonPressed() const;
     void displayResponse(const QString response) const;
     Ui::VirtualAssistantDialog *ui;
+
+    QString m_vaPath;
 
     QString m_reqIfId;
     QString m_description;

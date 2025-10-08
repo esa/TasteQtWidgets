@@ -110,7 +110,6 @@ VirtualAssistantDialog::~VirtualAssistantDialog()
     delete ui;
 }
 
-
 void VirtualAssistantDialog::onChatButtonPressed() const
 {
     qDebug() << "Chat button pressed";
@@ -118,6 +117,8 @@ void VirtualAssistantDialog::onChatButtonPressed() const
     QNetworkAccessManager *mgr = new QNetworkAccessManager();
 
     QString Question = QString("http://localhost:8080/chat/%1").arg(ui->questionLineEdit->text());
+
+    ui->textEdit->setText("Thinking...");
 
     const QUrl url(Question);
 
@@ -151,6 +152,8 @@ void VirtualAssistantDialog::queryEndPoint(QString query, QString reqIfId) const
     } else {
         Question = QString("http://localhost:8080/query/%1/%2").arg(query).arg(m_reqIfId);
     }
+
+    ui->textEdit->setText("Thinking...");
 
     const QUrl url(Question);
 
@@ -254,22 +257,93 @@ void VaWorker::stopVa()
     m_vaProcess = nullptr;
 }
 
+void VaWorker::initConfig()
+{
+    QString homedir = QDir::homePath();
+    QString configPath = QString("%1%2").arg(homedir).arg(CONFIG_PATH);
+    QString configFile = QString("%1/%2").arg(configPath).arg(CONFIG_FILE);
+
+    m_settingsFilePath = configFile;
+
+    if(std::filesystem::exists(configFile.toStdString()))
+    {
+        qDebug() << "Settings File OK";
+        m_settingsFilePath = configFile;
+    }
+    else
+    {
+        qDebug()<< "Settings File Not found " << configFile;
+        QFile::copy(CONFIG_FILE, configFile);
+
+        if(std::filesystem::exists(configFile.toStdString()))
+        {
+            qDebug()  << "Settings File Now OK";
+            m_settingsFilePath = configFile;
+        }
+    }
+
+}
+
+void VaWorker::readConfigData()
+{
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+
+    // General settings.
+    settings.beginGroup("VA_CONFIGURATION");
+
+    m_vaRootPath = settings.value(VA_ROOT_PATH, DEFAULT_VA_ROOT_PATH).toString();
+    m_configFilePath = settings.value(CONFIG_FILE_PATH, DEFAULT_CONFIG_FILE_PATH).toString();
+    m_queryDefinitionsFilePath = settings.value(QUERY_DEFINITIONS_FILE_PATH, DEFAULT_QUERY_DEFINITIONS_FILE_PATH).toString();
+    m_queryDefinitionsBaseDirectory = settings.value(QUERY_DEFINITIONS_BASE_DIRECTORY, DEFAULT_QUERY_DEFINITIONS_BASE_DIRECTORY).toString();
+    m_venvPath = settings.value(VENV_PATH, DEFAULT_VENV_PATH).toString();
+    m_verbosity = settings.value(VERBOSITY, DEFAULT_VERBOSITY).toString();
+    m_tmpExcelFilePath = settings.value(TEMP_EXCEL_FILE_PATH, DEFAULT_TEMP_EXCEL_FILE_PATH).toString();
+
+    settings.endGroup();
+
+}
+
+void VaWorker::writeConfigData()
+{
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+
+    settings.beginGroup("VA_CONFIGURATION");
+
+    settings.setValue(VA_ROOT_PATH, m_vaRootPath);
+    settings.setValue(CONFIG_FILE_PATH, m_configFilePath);
+    settings.setValue(QUERY_DEFINITIONS_FILE_PATH, m_queryDefinitionsFilePath);
+    settings.setValue(QUERY_DEFINITIONS_BASE_DIRECTORY, m_queryDefinitionsBaseDirectory);
+    settings.setValue(VENV_PATH, m_venvPath);
+    settings.setValue(VERBOSITY, m_verbosity);
+    settings.setValue(TEMP_EXCEL_FILE_PATH, m_tmpExcelFilePath);
+
+    settings.endGroup();
+
+    settings.sync();
+}
+
 void VaWorker::runVa()
 {
     m_vaProcess = new QProcess();
 
     QStringList arguments;
 
-    arguments << vaPath + "venv/bin/vareq";
+    initConfig();
+    readConfigData();
+    writeConfigData();
+
+    QString vaRoot = QString("/%1/").arg(m_vaRootPath);
+
+    arguments << vaRoot + m_venvPath + "/bin/vareq";
     arguments << "--mode" << "serve";
-    arguments << "--verbosity" << "debug";
-    arguments << "--query-definitions-path" << vaPath + "data/mbep_queries.json";
-    arguments << "--query-definitions-base-directory" << vaPath + "data";
-    arguments << "--requirements" << tmpExcelFile;
-    arguments << "--config-path" << vaPath + "data/default_config_corrected.json";
+    arguments << "--verbosity" << m_verbosity;
+    arguments << "--config-path" << vaRoot + m_configFilePath;
+    arguments << "--query-definitions-path" << vaRoot + m_queryDefinitionsFilePath;
+    arguments << "--query-definitions-base-directory" << vaRoot + m_queryDefinitionsBaseDirectory;
+    arguments << "--requirements" << m_tmpExcelFilePath;
 
     qDebug() << "First finish";
-    m_vaProcess->setProgram(vaPath + "venv/bin/python3");
+    m_vaProcess->setProgram(vaRoot + m_venvPath + "/bin/python3");
     m_vaProcess->setArguments(arguments);
 
     connect(m_vaProcess, &QProcess::readyReadStandardOutput, [&]() {

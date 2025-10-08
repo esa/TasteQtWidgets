@@ -57,6 +57,7 @@ RequirementsWidget::RequirementsWidget(QWidget *parent)
     , m_originalHandler(nullptr)
     , m_embedded(false)
     , m_apply(false)
+    , m_first(true)
 {
     ui->setupUi(this);
     m_textFilterModel.setDynamicSortFilter(true);
@@ -105,6 +106,7 @@ RequirementsWidget::~RequirementsWidget()
 
 void RequirementsWidget::setManager(RequirementsManager *manager)
 {
+    qDebug() << "Set Manager";
     m_reqManager = manager;
     connect(m_reqManager, &RequirementsManager::projectIDChanged, this, &RequirementsWidget::updateServerStatus);
     connect(m_reqManager, &RequirementsManager::listOfTags, this, &RequirementsWidget::fillTagBar);
@@ -128,15 +130,16 @@ void RequirementsWidget::setManager(RequirementsManager *manager)
 
 }
 
-
+#if 0
 void RequirementsWidget::setModel(RequirementsModelCommon *model)
 {
     RequirementsModelBase *derivedModel = new RequirementsModelBase(model);
     setModel(derivedModel);
 }
-
+#endif
 void RequirementsWidget::setModel(RequirementsModelBase *model)
 {
+    qDebug() << "Set Model";
     m_model = model;
     m_textFilterModel.setSourceModel(m_model);
 
@@ -157,6 +160,7 @@ QUrl RequirementsWidget::url() const
 
 void RequirementsWidget::setUrl(const QUrl &url)
 {
+    qDebug() << "Set Url";
     m_targetUrl = url.toString();
     onChangeOfCredentials(url.toString(), m_requirementsToken);
 }
@@ -168,15 +172,9 @@ QString RequirementsWidget::token() const
 
 void RequirementsWidget::setToken(const QString &token)
 {
+    qDebug() << "Set Url";
     m_targetToken = token;
     onChangeOfCredentials(m_requirementsUrl, token);
-}
-
-void RequirementsWidget::refresh()
-{
-    m_model->changeModelState(RequirementsModelBase::Both);
-    setModelTypeLabel(m_model->getState());
-    setLoginData();
 }
 
 QHeaderView *RequirementsWidget::horizontalTableHeader() const
@@ -197,14 +195,15 @@ void RequirementsWidget::onChangeOfCredentials(const QString url, const QString 
     m_requirementsUrl = url;
     m_requirementsToken = token;
 
-    qputenv("ESA_LOCAL_GITLAB_PROJECT", m_requirementsUrl.toUtf8());
-    qputenv("ESA_LOCAL_GITLAB_TOKEN", m_requirementsToken.toUtf8());
+//    qputenv("ESA_LOCAL_GITLAB_PROJECT", m_requirementsUrl.toUtf8());
+//    qputenv("ESA_LOCAL_GITLAB_TOKEN", m_requirementsToken.toUtf8());
 
     if (m_requirementsUrl.isEmpty()) {
         return;
     }
 
     m_reqManager->setRequirementsCredentials(m_requirementsUrl, m_requirementsToken);
+    Q_EMIT requirementsCredentialsChanged(m_requirementsUrl, m_requirementsToken); // $$$
 }
 
 void RequirementsWidget::applyEdits()
@@ -321,6 +320,11 @@ void RequirementsWidget::updateServerStatus()
         if (ui->allRequirements->cursor() == busyCursor) {
             ui->allRequirements->unsetCursor();
         }
+    }
+
+    if(m_first) {
+        setLoginData();
+        m_first = false;
     }
 }
 
