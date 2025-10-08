@@ -126,7 +126,7 @@ void VirtualAssistantDialog::onChatButtonPressed() const
         if(reply->error() == QNetworkReply::NoError){
             QString contents = QString::fromUtf8(reply->readAll());
             qDebug() << "Message received OK";
-            displayResponse(contents);
+            displayChatResponse(contents);
         }
         else{
             QString err = reply->errorString();
@@ -160,12 +160,14 @@ void VirtualAssistantDialog::queryEndPoint(QString query, QString reqIfId) const
     QObject::connect(reply, &QNetworkReply::finished, [=](){
         if(reply->error() == QNetworkReply::NoError){
             QString contents = QString::fromUtf8(reply->readAll());
-            qDebug() << "Message received OK";
-            displayResponse(contents);
+            ui->textEdit->setText("");
+            qDebug() << "Message received OK\n" << contents;
+            displayQueryResponse(contents);
         }
         else{
             QString err = reply->errorString();
             qDebug() << err;
+            ui->textEdit->setText(err);
         }
         reply->deleteLater();
     });
@@ -201,7 +203,7 @@ void VirtualAssistantDialog::onAssignTypeButtonPressed() const
     queryEndPoint("assign-type", m_reqIfId);
 }
 
-void VirtualAssistantDialog::displayResponse(const QString response) const
+void VirtualAssistantDialog::displayChatResponse(const QString response) const
 {
     QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
     QJsonObject json = doc.object();
@@ -213,6 +215,30 @@ void VirtualAssistantDialog::displayResponse(const QString response) const
         ui->textEdit->setText(res);
     }
 }
+
+void VirtualAssistantDialog::displayQueryResponse(const QString response) const
+{
+    QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
+    QJsonObject json = doc.object();
+
+    QJsonValue replyValue = json.value("reply");
+
+    ui->textEdit->setText(response);
+#if 0
+    if (replyValue.isObject()) {
+
+        QJsonObject userObject = replyValue.toObject();
+        QString message = userObject.value("message").toString();
+
+        if (!mess.isEmpty())
+        {
+            ui->textEdit->setText(message);
+        }
+
+    }
+#endif
+}
+
 
 /*!
    \brief OllamaWorker::OllamaWorker

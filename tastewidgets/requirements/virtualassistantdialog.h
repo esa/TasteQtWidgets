@@ -120,7 +120,8 @@ private:
     void onReviewButtonPressed() const;
     void onRewordButtonPressed() const;
     void onAssignTypeButtonPressed() const;
-    void displayResponse(const QString response) const;
+    void displayChatResponse(const QString response) const;
+    void displayQueryResponse(const QString response) const;
     Ui::VirtualAssistantDialog *ui;
 
     Requirement *m_requirement;
