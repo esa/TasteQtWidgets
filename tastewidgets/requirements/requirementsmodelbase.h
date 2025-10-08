@@ -42,7 +42,6 @@ class RequirementsModelBase : public requirement::RequirementsModelCommon
 
 public:
     RequirementsModelBase(requirement::RequirementsManager *manager, QObject *parent = nullptr);
-    RequirementsModelBase(requirement::RequirementsModelCommon *model);
 
     static QStringList addInternalRefs(const QStringList &refIfIDs, QList<Requirement> *requirements);
     static Requirement requirementFromIdExtended(const QString &reqIfID, QList<Requirement> *requirements);

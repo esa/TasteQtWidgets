@@ -316,18 +316,10 @@ void Excel::exportExcel()
 
             line = 3;
             for(int r = 3; r < rowCount + 3; ++r) {
-#if 0
-                QVariant IdRef = QString("=('5. Requirements\'!A%1)").arg(r);
-                QVariant ValidationRef = QString("=(\'5. Requirements\'!J%1)").arg(r);
-                m_xlsx.write(r, 1, IdRef, formatColumnText);
-                m_xlsx.write(r, 2, ValidationRef, formatColumnText);
-#endif
-
                 QModelIndex index = m_model->index(r-3, 0);
 
                 m_xlsx.write(r, 1, m_model->data(index, RequirementsModelBase::RoleNames::ReqIfIdRole));
                 m_xlsx.write(r, 2, m_model->data(index, RequirementsModelBase::RoleNames::ValidationRole).toString());
-
             }
 
             m_xlsx.deleteSheet("7a. Traceability Matrix");
@@ -380,6 +372,189 @@ void Excel::exportExcel()
                     m_xlsx.write(line, 2, parents);
                     line++;
                 }
+            }
+        }
+
+        m_xlsx.selectSheet(0);
+        m_xlsx.saveAs(m_fileName);
+    } else {
+        qDebug() << "Excel export failed";
+    }
+}
+
+void Excel::exportAllExcel(Requirement *requirement)
+{
+    int rowCount = m_model->rowCount(QModelIndex());
+
+    if (rowCount && !m_error) {
+        QXlsx::Format formatColumnText;
+        QXlsx::Format formatColumnId;
+        QXlsx::Format formatHeaders;
+        QXlsx::Format formatTopper;
+
+        formatTopper.setVerticalAlignment(QXlsx::Format::VerticalAlignment::AlignVCenter);
+        formatTopper.setHorizontalAlignment(QXlsx::Format::HorizontalAlignment::AlignLeft);
+        formatTopper.setFontBold(true);
+        formatTopper.setFontSize(12);
+        QRgb colourTop = 0xFF96DCF8;
+        formatTopper.setPatternBackgroundColor(QColor(colourTop));
+
+        formatHeaders.setVerticalAlignment(QXlsx::Format::VerticalAlignment::AlignVCenter);
+        formatHeaders.setHorizontalAlignment(QXlsx::Format::HorizontalAlignment::AlignHCenter);
+        formatHeaders.setTextWrap(true);
+        formatHeaders.setFontBold(true);
+        formatHeaders.setBottomBorderStyle(QXlsx::Format::BorderStyle::BorderThick);
+        formatHeaders.setTopBorderStyle(QXlsx::Format::BorderStyle::BorderHair);
+        formatHeaders.setRightBorderStyle(QXlsx::Format::BorderStyle::BorderHair);
+        QRgb colourHead = 0xFFCAEEFB;
+        formatHeaders.setPatternBackgroundColor(QColor(colourHead));
+        formatHeaders.setFontSize(14);
+
+        formatColumnText.setVerticalAlignment(QXlsx::Format::VerticalAlignment::AlignTop);
+        formatColumnText.setHorizontalAlignment(QXlsx::Format::HorizontalAlignment::AlignLeft);
+        formatColumnText.setFontSize(11);
+        formatColumnText.setTextWrap(true);
+        formatColumnText.setIndent(1);
+
+
+        formatColumnId.setVerticalAlignment(QXlsx::Format::VerticalAlignment::AlignTop);
+        formatColumnId.setHorizontalAlignment(QXlsx::Format::HorizontalAlignment::AlignLeft);
+        formatColumnId.setTextWrap(true);
+        formatColumnId.setIndent(1);
+        formatColumnId.setFontBold(true);
+        formatColumnId.setFontSize(12);
+
+        m_xlsx.deleteSheet("5. Requirements");
+        m_xlsx.insertSheet(6, "5. Requirements", QXlsx::AbstractSheet::ST_WorkSheet);
+        m_xlsx.write("A1", "5. Requirements");
+        m_xlsx.mergeCells("A1:O1", formatTopper);
+
+        m_xlsx.setColumnFormat(1, formatColumnId);
+        m_xlsx.setColumnFormat(2, 15, formatColumnText);
+        m_xlsx.setRowHeight(2, 45.0);
+
+        int column = 0;
+        for(QString header: xlsxSRSHeaders) {
+            column++;
+            m_xlsx.setColumnWidth(column, xlsxSRSColumnWidths[column-1]);
+            m_xlsx.write(2,column, header, formatHeaders);
+        }
+
+        int line = 3;
+        for(int r = 3; r < rowCount + 3; ++r) {
+            QModelIndex index = m_model->index(r-3, 0);
+
+            QString modelReqIfId = m_model->data(index, RequirementsModelBase::RoleNames::ReqIfIdRole).toString();
+            QString inputReqIfId;
+
+            if(requirement != nullptr) {
+                inputReqIfId = requirement->m_id;
+            }
+
+            if (modelReqIfId.compare(inputReqIfId) == 0) {
+                m_xlsx.write(line, 1, requirement->m_id);
+                m_xlsx.write(line, 2, requirement->m_type);
+                m_xlsx.write(line, 3, requirement->m_longName);
+                m_xlsx.write(line, 4, requirement->m_description);
+                m_xlsx.write(line, 5, requirement->m_parents.join('\n'));
+                m_xlsx.write(line, 6, requirement->m_justification);
+                m_xlsx.write(line, 7, requirement->m_priority);
+                m_xlsx.write(line, 8, requirement->m_note);
+                m_xlsx.write(line, 9, requirement->m_status);
+                m_xlsx.write(line, 10, requirement->m_validation.join(", "));
+                m_xlsx.write(line, 11, requirement->m_valDescription);
+                m_xlsx.write(line, 12, requirement->m_valStatus);
+                m_xlsx.write(line, 13, requirement->m_valEvidence);
+                m_xlsx.write(line, 14, requirement->m_compliance);
+                m_xlsx.write(line, 15, requirement->m_complianceStatus);
+            } else {
+                m_xlsx.write(line, 1, m_model->data(index, RequirementsModelBase::RoleNames::ReqIfIdRole));
+                m_xlsx.write(line, 2, m_model->data(index, RequirementsModelBase::RoleNames::TypeRole));
+                m_xlsx.write(line, 3, m_model->data(index, RequirementsModelBase::RoleNames::TitleRole));
+                m_xlsx.write(line, 4, m_model->data(index, RequirementsModelBase::RoleNames::DetailDescriptionRole));
+                m_xlsx.write(line, 5, m_model->data(index, RequirementsModelBase::RoleNames::ParentsRole));
+                m_xlsx.write(line, 6, m_model->data(index, RequirementsModelBase::RoleNames::JustificationRole));
+                m_xlsx.write(line, 7, m_model->data(index, RequirementsModelBase::RoleNames::PriorityRole));
+                m_xlsx.write(line, 8, m_model->data(index, RequirementsModelBase::RoleNames::NoteRole));
+                m_xlsx.write(line, 9, m_model->data(index, RequirementsModelBase::RoleNames::StatusRole));
+                m_xlsx.write(line, 10, m_model->data(index, RequirementsModelBase::RoleNames::ValidationRole));
+                m_xlsx.write(line, 11, m_model->data(index, RequirementsModelBase::RoleNames::ValDescriptionRole));
+                m_xlsx.write(line, 12, m_model->data(index, RequirementsModelBase::RoleNames::ValStatusRole));
+                m_xlsx.write(line, 13, m_model->data(index, RequirementsModelBase::RoleNames::ValEvidenceRole));
+                m_xlsx.write(line, 14, m_model->data(index, RequirementsModelBase::RoleNames::ComplianceRole));
+                m_xlsx.write(line, 15, m_model->data(index, RequirementsModelBase::RoleNames::ComplianceStatusRole));
+            }
+            line++;
+        }
+
+        m_xlsx.deleteSheet("6. Validation Matrix");
+        m_xlsx.insertSheet(8, "6. Validation Matrix", QXlsx::AbstractSheet::ST_WorkSheet);
+        m_xlsx.write("A1", "Validation Matrix");
+        m_xlsx.mergeCells("A1:B1", formatTopper);
+
+        m_xlsx.setColumnFormat(1, 2, formatColumnText);
+        m_xlsx.setColumnWidth(1, 25.0);
+        m_xlsx.setColumnWidth(2, 20.0);
+        m_xlsx.write(2, 1, "Requirement Identifier", formatHeaders);
+        m_xlsx.write(2, 2, "Validation Approach", formatHeaders);
+
+        line = 3;
+        for(int r = 3; r < rowCount + 3; ++r) {
+            QModelIndex index = m_model->index(r-3, 0);
+
+            m_xlsx.write(r, 1, m_model->data(index, RequirementsModelBase::RoleNames::ReqIfIdRole));
+            m_xlsx.write(r, 2, m_model->data(index, RequirementsModelBase::RoleNames::ValidationRole).toString());
+        }
+
+        m_xlsx.deleteSheet("7a. Traceability Matrix");
+        m_xlsx.insertSheet(9, "7a. Traceability Matrix", QXlsx::AbstractSheet::ST_WorkSheet);
+        m_xlsx.write("A1", "7a. Traceability Matrix (High level requirements to SRS)");
+        m_xlsx.mergeCells("A1:B1", formatTopper);
+
+        m_xlsx.setColumnFormat(1, 2, formatColumnText);
+        m_xlsx.setColumnWidth(1, 40.0);
+        m_xlsx.setColumnWidth(2, 40.0);
+        m_xlsx.write(2, 1, "Parent Requirement Identifier", formatHeaders);
+        m_xlsx.write(2, 2, "SRS Requirement Identifier", formatHeaders);
+
+        line = 3;
+        for(int r = 3; r < rowCount + 3; ++r) {
+            QModelIndex index = m_model->index(r-3, 0);
+
+            QString children = m_model->data(index, RequirementsModelBase::RoleNames::ChildrenRole).toString();
+
+            qDebug() << "Children " << children;
+
+            if (!children.isEmpty()) {
+                m_xlsx.write(line, 1, m_model->data(index, RequirementsModelBase::RoleNames::ReqIfIdRole));
+                m_xlsx.write(line, 2, children);
+                line++;
+            }
+        }
+
+        m_xlsx.deleteSheet("7b. Traceability Matrix");
+        m_xlsx.insertSheet(9, "7b. Traceability Matrix", QXlsx::AbstractSheet::ST_WorkSheet);
+        m_xlsx.write("A1", "7b. Traceability Matrix (SRS to High level requirements)");
+        m_xlsx.mergeCells("A1:B1", formatTopper);
+
+        m_xlsx.setColumnFormat(1, 2, formatColumnText);
+        m_xlsx.setColumnWidth(1, 40.0);
+        m_xlsx.setColumnWidth(2, 40.0);
+        m_xlsx.write(2, 1, "SRS Requirement Identifier", formatHeaders);
+        m_xlsx.write(2, 2, "Parent Requirement Identifier", formatHeaders);
+
+        line = 3;
+        for(int r = 3; r < rowCount + 3; ++r) {
+            QModelIndex index = m_model->index(r-3, 0);
+
+            QString parents = m_model->data(index, RequirementsModelBase::RoleNames::ParentsRole).toString();
+
+            qDebug() << "Parents" << parents;
+
+            if (!parents.isEmpty()) {
+                m_xlsx.write(line, 1, m_model->data(index, RequirementsModelBase::RoleNames::ReqIfIdRole));
+                m_xlsx.write(line, 2, parents);
+                line++;
             }
         }
 

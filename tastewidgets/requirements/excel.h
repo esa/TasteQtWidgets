@@ -42,6 +42,7 @@ public:
     static void createDefault(const QString fileName, const enum RequirementsModelBase::modelType type);
 
     void exportExcel();
+    void exportAllExcel(Requirement *requirement);
     void importExcel();
 
 private:

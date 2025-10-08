@@ -112,9 +112,11 @@ EditRequirementDialog::~EditRequirementDialog()
 
 void EditRequirementDialog::showVirtualAssistantDialog()
 {
+    updateRequirement();
+
     QString reqIfId = ui->idLineEdit->text();
     QString description = ui->descriptionTextEdit->toPlainText();
-    QScopedPointer<VirtualAssistantDialog> dialog(new VirtualAssistantDialog(m_model, description, reqIfId));
+    QScopedPointer<VirtualAssistantDialog> dialog(new VirtualAssistantDialog(m_model, m_requirement));
     dialog->setModal(true);
     const auto ret = dialog->exec();
 }

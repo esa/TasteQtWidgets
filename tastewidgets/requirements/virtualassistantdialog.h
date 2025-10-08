@@ -41,7 +41,7 @@ namespace requirement {
 static const QString tmpExcelFile = "/var/tmp/tmpExcelModel.xlsx";
 static const QString vaPath = "/home/taste/Development/VA/virtual-assistant/";
 static const QString CONFIG_PATH = "/.local";
-static const QString CONFIG_FILE = "vaConfig.ini";
+static const QString CONFIG_FILE = "vaconfig.ini";
 
 static const QString VA_ROOT_PATH = "VaRootPath";
 static const QString CONFIG_FILE_PATH = "ConfigFilePath";
@@ -49,7 +49,6 @@ static const QString QUERY_DEFINITIONS_FILE_PATH = "QueryDefinitionsFilePath";
 static const QString QUERY_DEFINITIONS_BASE_DIRECTORY = "QueryDefinitionsBaseDirectory";
 static const QString VENV_PATH = "VenvPath";
 static const QString VERBOSITY = "Verbosity";
-static const QString TEMP_EXCEL_FILE_PATH = "TempExcelFilePath";
 
 static const QString DEFAULT_VA_ROOT_PATH = "/home/taste/tool-inst/share/virtual-assistant";
 static const QString DEFAULT_CONFIG_FILE_PATH = "data/default_config_corrected.json";
@@ -57,7 +56,6 @@ static const QString DEFAULT_QUERY_DEFINITIONS_FILE_PATH = "data/mbep_queries.js
 static const QString DEFAULT_QUERY_DEFINITIONS_BASE_DIRECTORY = "data";
 static const QString DEFAULT_VENV_PATH = "venv";
 static const QString DEFAULT_VERBOSITY = "debug";
-static const QString DEFAULT_TEMP_EXCEL_FILE_PATH = "/var/tmp/tmpExcelModel.xlsx";
 
 /*!
    Worker class for launching Ollama Server
@@ -111,7 +109,7 @@ class VirtualAssistantDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit VirtualAssistantDialog(RequirementsModelBase *model, QString description = QString(), QString reqIfId = QString(), QDialog *parent = nullptr);
+    explicit VirtualAssistantDialog(RequirementsModelBase *model, Requirement *requirement = nullptr, QDialog *parent = nullptr);
     ~VirtualAssistantDialog();
 
 private:
@@ -124,6 +122,8 @@ private:
     void onAssignTypeButtonPressed() const;
     void displayResponse(const QString response) const;
     Ui::VirtualAssistantDialog *ui;
+
+    Requirement *m_requirement;
 
     QString m_vaPath;
 

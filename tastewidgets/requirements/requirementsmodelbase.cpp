@@ -44,25 +44,6 @@ RequirementsModelBase::RequirementsModelBase(requirement::RequirementsManager *m
     connect(this, &RequirementsModelBase::deleteRequirement, m_manager, &RequirementsManager::removeRequirement);
 }
 
-RequirementsModelBase::RequirementsModelBase(requirement::RequirementsModelCommon *model)
-    : RequirementsModelCommon(model->getManager(), nullptr)
-    , m_local(false)
-    , m_syncRefs(false)
-    , m_type(Both)
-    , m_checkingServer(false)
-    , m_deleted(QList<Requirement>())
-    , m_remote(QList<Requirement>())
-{
-//    m_local = false;
-//    m_syncRefs = false;
-//    m_type = Both;
-    connect(m_manager, &RequirementsManager::projectIDChanged, this, &RequirementsModelBase::updateServerStatus);
-    connect(m_manager, &RequirementsManager::fetchingRequirementsEnded, this, &RequirementsModelBase::fetchingFinished);
-    connect(this, &RequirementsModelBase::newRequirement, m_manager, &RequirementsManager::createRequirement);
-    connect(this, &RequirementsModelBase::updateRequirement, m_manager, &RequirementsManager::editRequirement);
-    connect(this, &RequirementsModelBase::deleteRequirement, m_manager, &RequirementsManager::removeRequirement);
-}
-
 /*!
  * \brief Model data function retrieves specific data items from the model
  * based on index to a specific requirement and the role for the data item

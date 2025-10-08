@@ -39,28 +39,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 namespace requirement {
 const int kIconSize = 16;
 
-VirtualAssistantDialog::VirtualAssistantDialog(RequirementsModelBase *model, QString description, QString reqIfId, QDialog *parent)
+VirtualAssistantDialog::VirtualAssistantDialog(RequirementsModelBase *model, Requirement *requirement, QDialog *parent)
     : QDialog(parent)
     , ui(new Ui::VirtualAssistantDialog)
     , m_model(model)
-    , m_reqIfId(reqIfId)
-    , m_description(description)
+    , m_requirement(requirement)
 {
     ui->setupUi(this);
 
     QFile::remove(tmpExcelFile);
     QFileInfo fileinfo(tmpExcelFile);
 
-    auto type = m_model->getState();
-//    enum RequirementsModelBase::modelType type = RequirementsModelBase::Both;
-
-    Excel::createDefault(tmpExcelFile, type);
+    Excel::createDefault(tmpExcelFile, RequirementsModelBase::SRS);
 
     int rowCount = m_model->rowCount(QModelIndex());
 
     if (rowCount) {
-        Excel excel(tmpExcelFile, m_model, type);
-        excel.exportExcel();
+        Excel excel(tmpExcelFile, m_model, RequirementsModelBase::SRS);
+        excel.exportAllExcel(m_requirement);
     }
 
     m_ollamaThread = new QThread();
@@ -79,7 +75,7 @@ VirtualAssistantDialog::VirtualAssistantDialog(RequirementsModelBase *model, QSt
     connect(m_vaThread, &QThread::finished, m_vaThread, &QObject::deleteLater);
     m_vaThread->start();
 
-    if(reqIfId.isEmpty()) {
+    if(m_requirement == nullptr) {
         connect(ui->oneButton, &QPushButton::clicked, this, &VirtualAssistantDialog::onDuplicationButtonPressed);
         connect(ui->twoButton, &QPushButton::clicked, this, &VirtualAssistantDialog::onConflictButtonPressed);
 
@@ -87,7 +83,7 @@ VirtualAssistantDialog::VirtualAssistantDialog(RequirementsModelBase *model, QSt
         ui->twoButton->setText("Conflict ?");
         ui->threeButton->hide();
     } else {
-        QString title = QString("Virtual Assistant - %1").arg(reqIfId);
+        QString title = QString("Virtual Assistant - %1").arg(m_requirement->m_id);
         this->setWindowTitle(title);
 
         connect(ui->oneButton, &QPushButton::clicked, this, &VirtualAssistantDialog::onAssignTypeButtonPressed);
@@ -297,7 +293,6 @@ void VaWorker::readConfigData()
     m_queryDefinitionsBaseDirectory = settings.value(QUERY_DEFINITIONS_BASE_DIRECTORY, DEFAULT_QUERY_DEFINITIONS_BASE_DIRECTORY).toString();
     m_venvPath = settings.value(VENV_PATH, DEFAULT_VENV_PATH).toString();
     m_verbosity = settings.value(VERBOSITY, DEFAULT_VERBOSITY).toString();
-    m_tmpExcelFilePath = settings.value(TEMP_EXCEL_FILE_PATH, DEFAULT_TEMP_EXCEL_FILE_PATH).toString();
 
     settings.endGroup();
 
@@ -315,7 +310,6 @@ void VaWorker::writeConfigData()
     settings.setValue(QUERY_DEFINITIONS_BASE_DIRECTORY, m_queryDefinitionsBaseDirectory);
     settings.setValue(VENV_PATH, m_venvPath);
     settings.setValue(VERBOSITY, m_verbosity);
-    settings.setValue(TEMP_EXCEL_FILE_PATH, m_tmpExcelFilePath);
 
     settings.endGroup();
 
@@ -340,7 +334,7 @@ void VaWorker::runVa()
     arguments << "--config-path" << vaRoot + m_configFilePath;
     arguments << "--query-definitions-path" << vaRoot + m_queryDefinitionsFilePath;
     arguments << "--query-definitions-base-directory" << vaRoot + m_queryDefinitionsBaseDirectory;
-    arguments << "--requirements" << m_tmpExcelFilePath;
+    arguments << "--requirements" << tmpExcelFile;
 
     qDebug() << "First finish";
     m_vaProcess->setProgram(vaRoot + m_venvPath + "/bin/python3");
