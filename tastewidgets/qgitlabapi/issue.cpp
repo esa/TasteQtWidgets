@@ -18,7 +18,6 @@ Issue::Issue()
     mAssignee = QString();
     mState = QString();
     mLabels.clear();
-//    mIssueType = QString();
     mCreatedAt = QDateTime::currentDateTime();
     mUpdatedAt = QDateTime::currentDateTime();
     mNotesCount = 0;
@@ -34,12 +33,10 @@ Issue::Issue(const Issue &issue) :
     mAssignee(issue.mAssignee),
     mState(issue.mState),
     mLabels(issue.mLabels),
-//    mIssueType(issue.mIssueType),
     mCreatedAt(issue.mCreatedAt),
     mUpdatedAt(issue.mUpdatedAt),
     mNotesCount(issue.mNotesCount)
 {
-//    std::cout << "Issue copied" << mTitle.toStdString() << std::endl;
 }
 
 

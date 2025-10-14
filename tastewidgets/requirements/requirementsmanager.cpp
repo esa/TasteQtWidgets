@@ -136,7 +136,6 @@ void RequirementsManager::createRequirement(const Requirement &requirement) cons
     default:
         qDebug() << "unknown repository type";
     }
-    return;
 }
 
 
@@ -160,8 +159,6 @@ void RequirementsManager::editRequirement(const Requirement &requirement) const
     default:
         qDebug() << "unknown repository type";
     }
-
-    return;
 }
 
 

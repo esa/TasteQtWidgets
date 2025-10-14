@@ -62,7 +62,6 @@ AddNewRequirementDialog::AddNewRequirementDialog(RequirementsModelBase *model, R
     if(type == RequirementsModelBase::SRS)
     {
         ui->specificationComboBox->setCurrentIndex(0);
-//        ui->specificationComboBox->setEnabled(false);
         ui->versionLabel->hide();
         ui->versionLineEdit->hide();
     }
@@ -70,9 +69,7 @@ AddNewRequirementDialog::AddNewRequirementDialog(RequirementsModelBase *model, R
     if(type == RequirementsModelBase::SSS)
     {
         ui->specificationComboBox->setCurrentIndex(1);
-//        ui->specificationComboBox->setEnabled(false);
     }
-
 
     updateOkButton();
 }
@@ -82,16 +79,7 @@ AddNewRequirementDialog::~AddNewRequirementDialog()
     delete ui;
 }
 
-#if 0
-void AddNewRequirementDialog::showVirtualAssistantDialog()
-{
-    QString reqIfId = ui->idLineEdit->text();
-    QString description = ui->descriptionTextEdit->toPlainText();
-    QScopedPointer<VirtualAssistantDialog> dialog(new VirtualAssistantDialog(reqIfId, description));
-    dialog->setModal(true);
-    const auto ret = dialog->exec();
-}
-#endif
+
 void AddNewRequirementDialog::updateRequirement()
 {
     m_requirement->m_id = ui->idLineEdit->text();
@@ -109,10 +97,10 @@ void AddNewRequirementDialog::updateRequirement()
     m_requirement->m_note = ui->noteTextEdit->toPlainText();
 
     QStringList val;
-    if (ui->testCheckBox->isChecked()) val << QString("test");
-    if (ui->analysisCheckBox->isChecked()) val << QString("analysis");
-    if (ui->inspectionCheckBox->isChecked()) val << QString("inspection");
-    if (ui->designCheckBox->isChecked()) val << QString("design");
+    if (ui->testCheckBox->isChecked()) val << k_validationTestLabel;
+    if (ui->analysisCheckBox->isChecked()) val << k_validationAnalysisLabel;
+    if (ui->inspectionCheckBox->isChecked()) val << k_validationInspectionLabel;
+    if (ui->designCheckBox->isChecked()) val << k_validationDesignLabel;
     m_requirement->m_validation = val;
 
     if (ui->specificationComboBox->currentIndex() == 1)
@@ -159,7 +147,6 @@ void AddNewRequirementDialog::addParent()
         ui->parentsListWidget->addItem(ui->availableListWidget->takeItem(ui->availableListWidget->currentRow())->text());
         ui->parentsListWidget->sortItems();
     }
-    return;
 }
 
 void AddNewRequirementDialog::removeParent()
@@ -169,7 +156,6 @@ void AddNewRequirementDialog::removeParent()
          ui->availableListWidget->addItem(ui->parentsListWidget->takeItem(ui->parentsListWidget->currentRow())->text());
          ui->availableListWidget->sortItems();
      }
-     return;
 }
 
 void AddNewRequirementDialog::updateOkButton()

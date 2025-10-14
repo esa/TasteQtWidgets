@@ -68,7 +68,7 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
     ui->complianceComboBox->setCurrentIndex(complianceIndex);
     ui->complianceStatusComboBox->setCurrentIndex(complianceStatusIndex);
 
-    if (m_requirement->m_reqType.compare("SSS") == 0) {
+    if (m_requirement->m_reqType.compare(k_SSSLabel) == 0) {
         ui->specificationComboBox->setCurrentIndex(1);
         ui->priorityComboBox->setEnabled(false);
         ui->addRefButton->setEnabled(false);
@@ -87,10 +87,10 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
     ui->specificationComboBox->setEnabled(false);
 
     for (const QString &val : m_requirement->m_validation) {
-        if(val.compare("test") == 0) ui->testCheckBox->setCheckState(Qt::Checked);
-        if(val.compare("analysis") == 0) ui->analysisCheckBox->setCheckState(Qt::Checked);
-        if(val.compare("inspection") == 0) ui->inspectionCheckBox->setCheckState(Qt::Checked);
-        if(val.compare("design") == 0) ui->designCheckBox->setCheckState(Qt::Checked);
+        if(val.compare(k_validationTestLabel) == 0) ui->testCheckBox->setCheckState(Qt::Checked);
+        if(val.compare(k_validationAnalysisLabel) == 0) ui->analysisCheckBox->setCheckState(Qt::Checked);
+        if(val.compare(k_validationInspectionLabel) == 0) ui->inspectionCheckBox->setCheckState(Qt::Checked);
+        if(val.compare(k_validationDesignLabel) == 0) ui->designCheckBox->setCheckState(Qt::Checked);
     }
 
     ui->notUniqueIDLabel->hide();
@@ -144,10 +144,10 @@ void EditRequirementDialog::updateRequirement()
     m_requirement->m_note = ui->noteTextEdit->toPlainText();
 
     QStringList val;
-    if (ui->testCheckBox->isChecked()) val << QString("test");
-    if (ui->analysisCheckBox->isChecked()) val << QString("analysis");
-    if (ui->inspectionCheckBox->isChecked()) val << QString("inspection");
-    if (ui->designCheckBox->isChecked()) val << QString("design");
+    if (ui->testCheckBox->isChecked()) val << k_validationTestLabel;
+    if (ui->analysisCheckBox->isChecked()) val << k_validationAnalysisLabel;
+    if (ui->inspectionCheckBox->isChecked()) val << k_validationInspectionLabel;
+    if (ui->designCheckBox->isChecked()) val << k_validationDesignLabel;
     m_requirement->m_validation = val;
     m_requirement->m_reqType = k_SRSLabel;
 
@@ -172,7 +172,6 @@ void EditRequirementDialog::addParent()
         ui->parentsListWidget->addItem(ui->availableListWidget->takeItem(ui->availableListWidget->currentRow())->text());
         ui->parentsListWidget->sortItems();
     }
-    return;
 }
 
 void EditRequirementDialog::removeParent()
@@ -181,7 +180,6 @@ void EditRequirementDialog::removeParent()
          ui->availableListWidget->addItem(ui->parentsListWidget->takeItem(ui->parentsListWidget->currentRow())->text());
          ui->availableListWidget->sortItems();
      }
-     return;
 }
 
 void EditRequirementDialog::updateOkButton()

@@ -194,11 +194,11 @@ enum RequirementsModelBase::modelType SelectSourceDialog::type()
     QString selection = ui->comboBox->currentText();
     enum RequirementsModelBase::modelType type = RequirementsModelBase::Empty;
 
-    if (selection.compare("SRS") == 0) {
+    if (selection.compare(k_SRSLabel) == 0) {
         type = RequirementsModelBase::SRS;
     }
 
-    if (selection.compare("SSS") == 0) {
+    if (selection.compare(k_SSSLabel) == 0) {
         type = RequirementsModelBase::SSS;
     }
 

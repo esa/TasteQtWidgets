@@ -103,37 +103,16 @@ public:
         END
     };
 
-//    enum modelType getModelType();
-//    void addRequirements(const QList<requirement::Requirement> &requirements) override;
-
-//    void importRequirements(const QList<requirement::Requirement> &requirements);
-#if 0
-    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
-    void setDataObject(VEObject *obj);
-    void setCommandMacro(cmd::CommandsStackBase::Macro *macro);
-    void setPropertyTemplateConfig(PropertyTemplateConfig *dynPropConfig);
-
-    void setAttributeName(const QString &name);
-
-protected:
-    cmd::CommandsStackBase::Macro *m_cmdMacro { nullptr };
-    PropertyTemplateConfig *m_propTemplatesConfig { nullptr };
-    VEObject *m_dataObject { nullptr };
-    QString m_attributeName = "requirement_ids";
-#endif
-
 public Q_SLOTS:
     void fetchingFinished();
 
 Q_SIGNALS:
-//    void rowsChanged() const;
     void exportCompleted() const;
     void newRequirement(const Requirement &requirement) const;
     void updateRequirement(const Requirement &requirement) const;
     void deleteRequirement(const Requirement &requirement) const;
 
 private:
-
     Issue remoteMatch(QString reqIfId);
     void updateServerStatus();
     void pushRequirements();
@@ -153,8 +132,6 @@ private:
     QList<Requirement> m_export;
     QList<Requirement> m_remote;
     QList<Requirement> m_deleted;
-//    QList<Requirement> m_deleted_SRS;
-//    QList<Requirement> m_deleted_SSS;
 };
 
 } // namespace requirement

@@ -47,7 +47,7 @@ bool ReqIf::importReqIf()
 {
     QDomElement reqif = m_document.firstChildElement();
 
-    if(refFromTag(reqif, "SPECIFICATION-TYPE-REF") == "SSS") {
+    if(refFromTag(reqif, "SPECIFICATION-TYPE-REF") == k_SSSLabel) {
         qDebug() << "SSS Detected";
         m_modelType = RequirementsModelBase::SSS;
     } else {
@@ -101,10 +101,10 @@ bool ReqIf::importReqIf()
                 reqFromSpec(specification, &requirement);
 
                 if (m_modelType == RequirementsModelBase::SSS) {
-                    requirement.m_reqType = QString("SSS");
+                    requirement.m_reqType = QString(k_SSSLabel);
                 }
                 else {
-                    requirement.m_reqType = QString("SRS");
+                    requirement.m_reqType = QString(k_SRSLabel);
                 }
 
                 for (int i = 0; i < childMatrix.count(); i++) {
@@ -231,8 +231,6 @@ void ReqIf::reqFromSpec(const QDomElement &spec, Requirement *req)
             updateReqEnum(req, enumerationRef, valueRef);
         }
     }
-
-    return;
 }
 
 void ReqIf::writeReqIfFile()
@@ -259,6 +257,11 @@ void ReqIf::writeReqIfFile()
         reqIfFile.close();
     }
 }
+
+/*!
+ * \brief ReqIf random Id generator based on 128bits (2x64) random bits
+ * formated in bit pattern 32-16-16-16-48 an converted to QString hex (base 16).
+ */
 
 QString ReqIf::randIdGenerator(QString prefix)
 {
@@ -423,12 +426,12 @@ QDomElement ReqIf::createSpecObjects(const QString identifier, QList<specAttrTyp
             QStringList labels = m_model->data(index, RequirementsModelCommon::TagsRole).toStringList();
 
             if ((m_modelType == RequirementsModelBase::SSS)
-            && (labels.contains("SRS"))) {
+            && (labels.contains(k_SRSLabel))) {
                 continue;
             }
 
             if ((m_modelType == RequirementsModelBase::SRS)
-            && (labels.contains("SSS"))) {
+            && (labels.contains(k_SSSLabel))) {
                 continue;
             }
 
@@ -577,9 +580,9 @@ QDomElement ReqIf::createSpecification(const QString longName, const QString des
 
     QString specTypeId;
     if (m_modelType == RequirementsModelBase::SSS) {
-        specTypeId = QString("SSS");
+        specTypeId = QString(k_SSSLabel);
     } else {
-        specTypeId = QString("SRS");
+        specTypeId = QString(k_SRSLabel);
     }
     QDomElement type = m_document.createElement("TYPE");
     QDomElement typeRef = m_document.createElement("SPECIFICATION-TYPE-REF");
@@ -714,11 +717,11 @@ void ReqIf::createReqIf()
     if (m_modelType == RequirementsModelBase::SSS) {
         specificationType.setAttribute("DESC", "A Software System Specification contains the high level system requirements for the system development.");
         specificationType.setAttribute("LONG-NAME", "Software System Specification");
-        specificationType.setAttribute("IDENTIFIER", "SSS");
+        specificationType.setAttribute("IDENTIFIER", k_SSSLabel);
     } else {
         specificationType.setAttribute("DESC", "A Software Requirements Specification contains a set of precise technical requirements for the software development.");
         specificationType.setAttribute("LONG-NAME", "Software Requirements Specification");
-        specificationType.setAttribute("IDENTIFIER", "SRS");
+        specificationType.setAttribute("IDENTIFIER", k_SRSLabel);
     }
     specificationType.setAttribute("LAST-CHANGE", m_timeStamp);
 

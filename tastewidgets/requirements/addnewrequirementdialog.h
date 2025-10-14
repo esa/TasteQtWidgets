@@ -46,7 +46,6 @@ private:
     void addParent();
     void removeParent();
     void updateOkButton();
-//    void showVirtualAssistantDialog();
     Requirement *m_requirement;
     requirement::RequirementsModelBase *m_model;
     Ui::BasicRequirementDialog *ui;

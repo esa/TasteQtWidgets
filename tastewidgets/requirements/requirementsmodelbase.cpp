@@ -198,35 +198,35 @@ void RequirementsModelBase::addRequirements(const QList<Requirement> &requiremen
     if(m_local) {
         m_remote << requirements;
         qDebug() << "Add to remote " << requirements.size();
-    } else {
+        return;
+    }
 
-        qDebug() << "Add to main model " << requirements.size();
+    qDebug() << "Add to main model " << requirements.size();
 
-        switch (m_type) {
-        case SRS: {
-                QList<Requirement> filtered;
-                for (const Requirement &requirement : requirements) {
-                    if (requirement.m_issue.mLabels.contains("SRS")) {
-                        filtered << requirement;
-                    }
+    switch (m_type) {
+    case SRS: {
+            QList<Requirement> filtered;
+            for (const Requirement &requirement : requirements) {
+                if (requirement.m_issue.mLabels.contains(k_SRSLabel)) {
+                    filtered << requirement;
                 }
-                RequirementsModelCommon::addRequirements(filtered);
-                break;
             }
-        case SSS: {
-                QList<Requirement> filtered;
-                for (const Requirement &requirement : requirements) {
-                    if (requirement.m_issue.mLabels.contains("SSS")) {
-                        filtered << requirement;
-                    }
-                }
-                RequirementsModelCommon::addRequirements(filtered);
-                break;
-            }
-        default:
-            RequirementsModelCommon::addRequirements(requirements);
+            RequirementsModelCommon::addRequirements(filtered);
             break;
         }
+    case SSS: {
+            QList<Requirement> filtered;
+            for (const Requirement &requirement : requirements) {
+                if (requirement.m_issue.mLabels.contains(k_SSSLabel)) {
+                    filtered << requirement;
+                }
+            }
+            RequirementsModelCommon::addRequirements(filtered);
+            break;
+        }
+    default:
+        RequirementsModelCommon::addRequirements(requirements);
+        break;
     }
 }
 
@@ -397,10 +397,10 @@ void RequirementsModelBase::fetchingFinished()
             m_local = false;
             switch(m_type) {
             case RequirementsModelBase::SSS:
-                m_manager->requestAllRequirements("SSS");
+                m_manager->requestAllRequirements(k_SSSLabel);
                 break;
             case RequirementsModelBase::SRS:
-                m_manager->requestAllRequirements("SRS");
+                m_manager->requestAllRequirements(k_SRSLabel);
                 break;
             default:
                 m_manager->requestAllRequirements("");
@@ -422,21 +422,19 @@ void RequirementsModelBase::fetchingFinished()
                 m_local = false;
                 if ((m_url.compare(m_manager->projectUrl()) != 0)
                 || (m_token.compare(m_manager->token()) != 0)) {
-//                    m_checkingServer = true;
                     m_manager->setRequirementsCredentials(m_url, m_token);
                 }
                 Q_EMIT exportCompleted();
-//                QMessageBox::warning(nullptr, tr("New Target Completed"), tr("Completed"));
             } else {
 
                 qDebug() << "Reload original model from Apply";
 
                 switch(m_type) {
                 case RequirementsModelBase::SSS:
-                    m_manager->requestAllRequirements("SSS");
+                    m_manager->requestAllRequirements(k_SSSLabel);
                     break;
                 case RequirementsModelBase::SRS:
-                    m_manager->requestAllRequirements("SRS");
+                    m_manager->requestAllRequirements(k_SRSLabel);
                     break;
                 default:
                     m_manager->requestAllRequirements("");
@@ -448,7 +446,6 @@ void RequirementsModelBase::fetchingFinished()
 
             Q_EMIT exportCompleted();
             qDebug() << "Sync OK -- Apply Completed";
-//            QMessageBox::warning(nullptr, tr("Sync OK Completed"), tr("Completed"));
         }
     }
 }

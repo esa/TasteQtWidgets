@@ -164,10 +164,7 @@ void IssuesManager::setProjectID(const int &newProjectID)
 {
 // Always emit projectIDChanged because multiple invalid projects will all have projectID -1
 // So you cannot test multiple incorrect Urls if you don't get multiple projectIDChanged messages
-//
-//    if (m_projectID == newProjectID) {
-//        return;
-//    }
+
     m_projectID = newProjectID;
     Q_EMIT projectIDChanged();
 }

@@ -224,19 +224,7 @@ void VirtualAssistantDialog::displayQueryResponse(const QString response) const
     QJsonValue replyValue = json.value("reply");
 
     ui->textEdit->setText(response);
-#if 0
-    if (replyValue.isObject()) {
 
-        QJsonObject userObject = replyValue.toObject();
-        QString message = userObject.value("message").toString();
-
-        if (!mess.isEmpty())
-        {
-            ui->textEdit->setText(message);
-        }
-
-    }
-#endif
 }
 
 

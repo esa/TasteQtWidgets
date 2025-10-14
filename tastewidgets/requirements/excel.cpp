@@ -130,7 +130,6 @@ void Excel::importExcel()
                 requirement.m_type = m_xlsx.read(r, 2).toString();
                 requirement.m_longName = m_xlsx.read(r, 3).toString();
                 requirement.m_description = m_xlsx.read(r, 4).toString();
-//              requirement.m_children = m_xlsx.read(r, 5).toString().trimmed().split('\n');
                 requirement.m_justification = m_xlsx.read(r, 5).toString();
                 requirement.m_note = m_xlsx.read(r, 6).toString();
                 requirement.m_status = m_xlsx.read(r, 7).toString();
@@ -150,7 +149,6 @@ void Excel::importExcel()
                 requirement.m_longName = m_xlsx.read(r, 3).toString();
                 requirement.m_description = m_xlsx.read(r, 4).toString();
                 requirement.m_parents = m_xlsx.read(r, 5).toString().trimmed().split('\n');
-//              requirement.m_children = m_xlsx.read(r, 6).toString().trimmed().split('\n');
                 requirement.m_justification = m_xlsx.read(r, 6).toString();
                 requirement.m_priority = m_xlsx.read(r, 7).toString();
                 requirement.m_note = m_xlsx.read(r, 8).toString();
@@ -241,7 +239,7 @@ void Excel::exportExcel()
 
                 QStringList labels = m_model->data(index, RequirementsModelBase::RoleNames::TagsRole).toStringList();
 
-                if (labels.contains("SSS")) {
+                if (labels.contains(k_SSSLabel)) {
                     m_xlsx.write(line, 1, m_model->data(index, RequirementsModelBase::RoleNames::ReqIfIdRole));
                     m_xlsx.write(line, 2, m_model->data(index, RequirementsModelBase::RoleNames::TypeRole));
                     m_xlsx.write(line, 3, m_model->data(index, RequirementsModelBase::RoleNames::TitleRole));
@@ -283,7 +281,7 @@ void Excel::exportExcel()
 
                 QStringList labels = m_model->data(index, RequirementsModelBase::RoleNames::TagsRole).toStringList();
 
-                if (labels.contains("SRS")) {
+                if (labels.contains(k_SRSLabel)) {
                     m_xlsx.write(line, 1, m_model->data(index, RequirementsModelBase::RoleNames::ReqIfIdRole));
                     m_xlsx.write(line, 2, m_model->data(index, RequirementsModelBase::RoleNames::TypeRole));
                     m_xlsx.write(line, 3, m_model->data(index, RequirementsModelBase::RoleNames::TitleRole));

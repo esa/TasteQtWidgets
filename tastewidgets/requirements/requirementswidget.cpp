@@ -579,10 +579,10 @@ void RequirementsWidget::setModelTypeLabel(enum RequirementsModelBase::modelType
         ui->modelTypeLabel->setText("Empty");
         break;
     case RequirementsModelBase::SRS:
-        ui->modelTypeLabel->setText("SRS");
+        ui->modelTypeLabel->setText(k_SRSLabel);
         break;
     case RequirementsModelBase::SSS:
-        ui->modelTypeLabel->setText("SSS");
+        ui->modelTypeLabel->setText(k_SSSLabel);
         break;
     case RequirementsModelBase::Both:
         ui->modelTypeLabel->setText("Both");

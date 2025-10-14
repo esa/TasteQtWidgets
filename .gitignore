@@ -17,6 +17,8 @@
 *.qm
 .#*
 *.*#
+*.cproject
+*.project
 core
 !core/
 tags
