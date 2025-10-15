@@ -43,6 +43,7 @@ VirtualAssistantDialog::VirtualAssistantDialog(RequirementsModelBase *model, Req
     : QDialog(parent)
     , ui(new Ui::VirtualAssistantDialog)
     , m_model(model)
+    , m_reqIfId(requirement->m_id)
     , m_requirement(requirement)
 {
     ui->setupUi(this);
