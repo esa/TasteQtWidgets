@@ -17,10 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 
 
 #include "excel.h"
-#include "defaultsss.h"
-#include "defaultsrs.h"
 #include <iostream>
 #include <fstream>
+
 namespace requirement {
 
 Excel::Excel(const QString fileName, RequirementsModelBase *model, const enum RequirementsModelBase::modelType type) :
@@ -38,29 +37,48 @@ Excel::Excel(const QString fileName, RequirementsModelBase *model, const enum Re
     }
 }
 
+
 void Excel::createDefault(const QString fileName, const enum RequirementsModelBase::modelType type)
 {
-    if (type == RequirementsModelBase::SSS) {
-        if (!fileName.isEmpty()) {
+    QString homedir = QDir::homePath();
+    QString configPath = QString("%1%2").arg(homedir).arg(CONFIG_PATH);
+    QString configFile = QString("%1/%2").arg(configPath).arg(CONFIG_FILE);
 
-            qDebug() << fileName;
-
-            std::ofstream fileStream(fileName.toStdString());
-            fileStream.write((const char *)defaultSSS, sizeof(defaultSSS));
-            fileStream.flush();
-            fileStream.close();
-        }
-    } else {
-        if (!fileName.isEmpty()) {
-
-            qDebug() << fileName;
-
-            std::ofstream fileStream(fileName.toStdString());
-            fileStream.write((const char *)defaultSRS, sizeof(defaultSRS));
-            fileStream.flush();
-            fileStream.close();
-        }
+    if(std::filesystem::exists(configFile.toStdString()))
+    {
+        qDebug() << "Settings File OK";
     }
+
+    QSettings settings(configFile, QSettings::IniFormat);
+    settings.beginGroup("EXCEL_CONFIGURATION");
+    QString templatePath = settings.value(EXCEL_TEMPLATE_PATH, configPath).toString();
+    QString srsFile = settings.value(EXCEL_SRS_TEMPLATE_FILE, DEFAULT_EXCEL_SRS_TEMPLATE_FILE).toString();
+    QString sssFile = settings.value(EXCEL_SSS_TEMPLATE_FILE, DEFAULT_EXCEL_SSS_TEMPLATE_FILE).toString();
+    settings.endGroup();
+
+    settings.beginGroup("EXCEL_CONFIGURATION");
+    settings.setValue(EXCEL_TEMPLATE_PATH, templatePath);
+    settings.setValue(EXCEL_SRS_TEMPLATE_FILE, srsFile);
+    settings.setValue(EXCEL_SSS_TEMPLATE_FILE, sssFile);
+    settings.endGroup();
+    settings.sync();
+
+    QString defaultFile;
+
+    if (type == RequirementsModelBase::SSS) {
+        defaultFile = QString("%1/%2").arg(templatePath).arg(sssFile);
+    } else {
+        defaultFile = QString("%1/%2").arg(templatePath).arg(srsFile);
+    }
+
+    qDebug() << "Copy From " << defaultFile << " to " << fileName;
+
+    bool success = QFile::copy(defaultFile, fileName);
+
+    if (!success) {
+        QMessageBox::warning(nullptr, "Missing Template", QString("File not found:\n%1").arg(defaultFile));
+    }
+
 }
 
 void Excel::parseExcel()

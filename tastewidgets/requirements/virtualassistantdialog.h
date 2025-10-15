@@ -40,8 +40,6 @@ namespace requirement {
 
 static const QString tmpExcelFile = "/var/tmp/tmpExcelModel.xlsx";
 static const QString vaPath = "/home/taste/Development/VA/virtual-assistant/";
-static const QString CONFIG_PATH = "/.local";
-static const QString CONFIG_FILE = "vaconfig.ini";
 
 static const QString VA_ROOT_PATH = "VaRootPath";
 static const QString CONFIG_FILE_PATH = "ConfigFilePath";
@@ -51,7 +49,7 @@ static const QString VENV_PATH = "VenvPath";
 static const QString VERBOSITY = "Verbosity";
 
 static const QString DEFAULT_VA_ROOT_PATH = "/home/taste/tool-inst/share/virtual-assistant";
-static const QString DEFAULT_CONFIG_FILE_PATH = "data/default_config_corrected.json";
+static const QString DEFAULT_CONFIG_FILE_PATH = "data/default_config.json";
 static const QString DEFAULT_QUERY_DEFINITIONS_FILE_PATH = "data/mbep_queries.json";
 static const QString DEFAULT_QUERY_DEFINITIONS_BASE_DIRECTORY = "data";
 static const QString DEFAULT_VENV_PATH = "venv";

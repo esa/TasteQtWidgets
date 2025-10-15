@@ -23,6 +23,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include <QFileInfo>
 #include <QTextStream>
 #include <QMessageBox>
+#include <QSettings>
+#include <QDir>
+
 
 #include "xlsxdocument.h"
 #include "xlsxrichstring.h"
@@ -33,6 +36,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 
 namespace requirement {
 class RequirementsModelBase;
+
+static const QString CONFIG_PATH = "/.local";
+static const QString CONFIG_FILE = "configRequirements.ini";
+
+static const QString EXCEL_TEMPLATE_PATH = "ExcelTemplatePath";
+static const QString EXCEL_SRS_TEMPLATE_FILE = "ExcelSRSTemplateFile";
+static const QString EXCEL_SSS_TEMPLATE_FILE = "ExcelSSSTemplateFile";
+
+static const QString DEFAULT_EXCEL_SRS_TEMPLATE_FILE = "defaultSRS.xlsx";
+static const QString DEFAULT_EXCEL_SSS_TEMPLATE_FILE = "defaultSSS.xlsx";
 
 class Excel
 {
@@ -55,13 +68,11 @@ private:
     int m_rowCount;
     bool m_error;
 
-
     const QStringList xlsxSSSHeaders = {
         "Requirement\nIdentifier",
         "Requirement\nType",
         "Title",
         "Details",
-//        "Children",
         "Justification",
         "Note",
         "Status",
@@ -79,7 +90,6 @@ private:
         "Title",
         "Details",
         "Parents",
-//        "Children",
         "Justification",
         "Priority",
         "Note",
@@ -96,7 +106,6 @@ private:
         20.0,
         35.0,
         60.0,
-//        25.0,
         40.0,
         40.0,
         16.0,
@@ -115,7 +124,6 @@ private:
         35.0,
         60.0,
         25.0,
-//        25.0,
         40.0,
         16.0,
         40.0,
