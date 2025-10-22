@@ -43,9 +43,11 @@ VirtualAssistantDialog::VirtualAssistantDialog(RequirementsModelBase *model, Req
     : QDialog(parent)
     , ui(new Ui::VirtualAssistantDialog)
     , m_model(model)
-    , m_reqIfId(requirement->m_id)
     , m_requirement(requirement)
 {
+    if(m_requirement != nullptr){
+        m_reqIfId =m_requirement->m_id;
+    }
     ui->setupUi(this);
 
     QFile::remove(tmpExcelFile);

@@ -20,6 +20,7 @@ public:
         EditIssue,
         Projects,
         Groups,
+        GroupProjects,
         CreateProject,
         ProjectLabels,
     };
@@ -39,6 +40,7 @@ public:
     QUrl composeProjectUrl(const QString &projectName) const;
     QUrl composeGroupUrl(const QString &groupName) const;
     QUrl composeCreateProjectUrl(const QString &projectName, const QString &groupID) const;
+    QUrl composeGroupProjectsUrl(const QString &groupID) const;
 
     void setBaseURL(const QUrl &newBaseURL);
 
