@@ -12,8 +12,11 @@ configure_file(__init__.py.in ${CMAKE_SOURCE_DIR}/__init__.py @ONLY)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
+# Added GuiPrivate, Concurrent and xml to cope with Kispe changes
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Concurrent Xml GuiPrivate)
 set(QT_VER_MAJ_MIN ${Qt6_VERSION_MAJOR}.${Qt6_VERSION_MINOR})
+# MP : added this:
+set(QT_INSTALL_INCLUDE_DIR "${CMAKE_PREFIX_PATH}/include")
 include(CCache)
 
 set(Python3_FIND_VIRTUALENV FIRST)
@@ -25,6 +28,9 @@ execute_process(
     OUTPUT_VARIABLE PYTHON_LIBS_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+
+# add this (MP)_XXX FIXME this is using a hardcoded patah
+set(SHIBOKEN_INCLUDE_DIR "/home/taste/.local/lib/python3.13/site-packages/shiboken6/include")
 
 if(NOT DEFINED SHIBOKEN_CUSTOM_PREFIX) # look for shiboken in a custom location
     # TODO: ensure the PYTHON_LIBS_DIR is correct
@@ -38,6 +44,13 @@ endif()
 
 find_package(Shiboken6 ${QT_VER_MAJ_MIN} REQUIRED)
 find_package(PySide6 ${QT_VER_MAJ_MIN} REQUIRED)
+
+# MP added this to get past the Signal:: error (XXX seems not enough)
+include_directories(
+    ${PySide6_INCLUDE_DIRS}
+    ${Shiboken6_INCLUDE_DIRS}
+)
+
 
 set(Python3_VERSION_MAJORMINOR "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 if(NOT TasteQtWidgets_PYTHON_BINDINGS_INSTALL_PREFIX)
@@ -72,6 +85,7 @@ set(bindings_library ${PROJECT_NAME})
 
 set(TASTE_SUBLIB_SRC_ROOT ${CMAKE_SOURCE_DIR}/../tastewidgets)
 add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/qgitlabapi ${CMAKE_BINARY_DIR}/tastewidgets/qgitlabapi)
+add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/QXlsx ${CMAKE_BINARY_DIR}/tastewidgets/qxslx)
 add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/tracecommon ${CMAKE_BINARY_DIR}/tastewidgets/tracecommon)
 add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/requirements ${CMAKE_BINARY_DIR}/tastewidgets/requirements)
 add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/reviews ${CMAKE_BINARY_DIR}/tastewidgets/reviews)
@@ -133,6 +147,7 @@ set(TasteQtWidgets_typesystem_paths # PySide path, this variable was exposed by 
 set(TasteQtWidgets_target_link_libraries ${original_library}
     ${MY_LINK_LIBS}
     ${Python3_LIBRARIES}
+    QXlsx
     QGitlabAPI
     requirements
     reviews
@@ -146,13 +161,14 @@ add_library(${original_library} SHARED )
 
 target_link_libraries(${original_library} PUBLIC
     QGitlabAPI
+    QXlsx
     requirements
     reviews
     tracecommon
 )
 
 set(QT_INCLUDES "")
-foreach(QT_MODULE Qt6::Core Qt6::Widgets Qt6::Network Qt6::Gui QGitlabAPI requirements reviews tracecommon)
+foreach(QT_MODULE Qt6::Core Qt6::Widgets Qt6::Network Qt6::Gui QGitlabAPI QXlsx requirements reviews tracecommon)
     get_property(QT_WIDGETS_INCLUDE_DIRS TARGET ${QT_MODULE} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
     foreach(INCLUDE_DIR ${QT_WIDGETS_INCLUDE_DIRS})
         if(NOT "${INCLUDE_DIR}" IN_LIST QT_INCLUDES)
@@ -162,14 +178,31 @@ foreach(QT_MODULE Qt6::Core Qt6::Widgets Qt6::Network Qt6::Gui QGitlabAPI requir
     endforeach()
 endforeach()
 
+# MP : ADDED:
+message(STATUS "Adding INCLUDE path: " ${QT_INSTALL_INCLUDE_DIR})
+message(STATUS "Adding INCLUDE path: " ${QT_INSTALL_INCLUDE_DIR}/QtCore)
+list(APPEND QT_INCLUDES "${QT_INSTALL_INCLUDE_DIR}")
+list(APPEND QT_INCLUDES "${QT_INSTALL_INCLUDE_DIR}/QtCore")
+
 set(ALL_INCLUDE_PATHS
     ${QT_INCLUDES}
+    #${CMAKE_SOURCE_DIR}/../tastewidgets/QXlsx/header
     ${SHIBOKEN_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/../tastewidgets
 )
 # Include flags/path that will be set in 'target_include_directories'
 set(TasteQtWidgets_target_include_directories ${ALL_INCLUDE_PATHS})
 set(TasteQtWidgets_include_paths ${ALL_INCLUDE_PATHS})
+
+# This is needed for the build of QXlsx, for QColor error and others
+# XXX refactor using QT_INSTALL_INCLUDE_DIR
+target_include_directories(QXlsx PRIVATE
+    ./Qt/6.10.0/gcc_64/include
+    ./Qt/6.10.0/gcc_64/include/QtGui
+    ./Qt/6.10.0/gcc_64/include/QtGui/private
+    ./Qt/6.10.0/gcc_64/include/QtCore/6.10.0/QtCore
+    ./Qt/6.10.0/gcc_64/include/QtCore/6.10.0
+)
 
 create_python_bindings(
     ${PROJECT_NAME}
