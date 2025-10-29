@@ -48,7 +48,7 @@ find_package(PySide6 ${QT_VER_MAJ_MIN} REQUIRED)
 # MP added this to get past the Signal:: error (XXX seems not enough)
 include_directories(
     ${PySide6_INCLUDE_DIRS}
-    ${Shiboken6_INCLUDE_DIRS}
+    ${SHIBOKEN_INCLUDE_DIR}
 )
 
 
@@ -102,6 +102,8 @@ set(TasteQtWidgets_SRC
     ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/requirement_requirement_wrapper.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/requirement_requirementsmanager_wrapper.h
     ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/requirement_requirementsmanager_wrapper.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/requirement_requirementsmodelcommon_wrapper.h
+    ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/requirement_requirementsmodelcommon_wrapper.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/requirement_requirementsmodelbase_wrapper.h
     ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/requirement_requirementsmodelbase_wrapper.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/requirement_requirementswidget_wrapper.h

@@ -9,6 +9,7 @@
 #include <qgitlabapi/qgitlabclient.h>
 #include <requirements/requirement.h>
 #include <requirements/requirementsmanager.h>
+#include <requirements/requirementsmodelcommon.h>
 #include <requirements/requirementsmodelbase.h>
 #include <requirements/requirementswidget.h>
 #include <reviews/review.h>

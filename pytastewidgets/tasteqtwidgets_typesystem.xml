@@ -15,9 +15,11 @@
         </object-type>
         <value-type name="Requirement">
         </value-type>
+        <object-type name="RequirementsModelCommon"/>
         <object-type name="RequirementsModelBase">
             <enum-type name="RoleNames"/>
             <enum-type name="HEADER_SECTIONS"/>
+            <enum-type name="modelType"/>
         </object-type>
     </namespace-type>
     <namespace-type name="reviews" visible="yes">
