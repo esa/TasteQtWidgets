@@ -29,8 +29,6 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-# add this (MP)_XXX FIXME this is using a hardcoded patah
-set(SHIBOKEN_INCLUDE_DIR "/home/taste/.local/lib/python3.13/site-packages/shiboken6/include")
 
 if(NOT DEFINED SHIBOKEN_CUSTOM_PREFIX) # look for shiboken in a custom location
     # TODO: ensure the PYTHON_LIBS_DIR is correct
@@ -41,15 +39,6 @@ if(NOT DEFINED PYSIDE_CUSTOM_PREFIX) # look for pyside in a custom location
     # TODO: ensure the PYTHON_LIBS_DIR is correct
     set(PYSIDE_CUSTOM_PREFIX "${PYTHON_LIBS_DIR}/PySide6")
 endif()
-
-find_package(Shiboken6 ${QT_VER_MAJ_MIN} REQUIRED)
-find_package(PySide6 ${QT_VER_MAJ_MIN} REQUIRED)
-
-# MP added this to get past the Signal:: error (XXX seems not enough)
-include_directories(
-    ${PySide6_INCLUDE_DIRS}
-    ${SHIBOKEN_INCLUDE_DIR}
-)
 
 
 set(Python3_VERSION_MAJORMINOR "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
@@ -67,6 +56,18 @@ if(NOT TasteQtWidgets_PYTHON_BINDINGS_INSTALL_PREFIX)
             )
     endif()
 endif()
+
+# We need to include Shiboken include path (assuming pip installation)
+set(SHIBOKEN_INCLUDE_DIR "${TasteQtWidgets_PYTHON_BINDINGS_INSTALL_PREFIX}/shiboken6/include")
+include_directories(
+    ${PySide6_INCLUDE_DIRS}
+    ${SHIBOKEN_INCLUDE_DIR}
+)
+
+
+find_package(Shiboken6 ${QT_VER_MAJ_MIN} REQUIRED)
+find_package(PySide6 ${QT_VER_MAJ_MIN} REQUIRED)
+
 
 set(TASTE_PYTHON_MODULE_NAME "Py${PROJECT_NAME}")
 set(TasteQtWidgets_PYTHON_BINDINGS_INSTALL_PREFIX "${TasteQtWidgets_PYTHON_BINDINGS_INSTALL_PREFIX}/${TASTE_PYTHON_MODULE_NAME}")
@@ -180,7 +181,7 @@ foreach(QT_MODULE Qt6::Core Qt6::Widgets Qt6::Network Qt6::Gui QGitlabAPI QXlsx 
     endforeach()
 endforeach()
 
-# MP : ADDED:
+# MP : Added the following to build Kispe extensions:
 message(STATUS "Adding INCLUDE path: " ${QT_INSTALL_INCLUDE_DIR})
 message(STATUS "Adding INCLUDE path: " ${QT_INSTALL_INCLUDE_DIR}/QtCore)
 list(APPEND QT_INCLUDES "${QT_INSTALL_INCLUDE_DIR}")
@@ -198,13 +199,13 @@ set(TasteQtWidgets_include_paths ${ALL_INCLUDE_PATHS})
 
 # This is needed for the build of QXlsx, for QColor error and others
 # XXX refactor using QT_INSTALL_INCLUDE_DIR
-target_include_directories(QXlsx PRIVATE
-    ./Qt/6.10.0/gcc_64/include
-    ./Qt/6.10.0/gcc_64/include/QtGui
-    ./Qt/6.10.0/gcc_64/include/QtGui/private
-    ./Qt/6.10.0/gcc_64/include/QtCore/6.10.0/QtCore
-    ./Qt/6.10.0/gcc_64/include/QtCore/6.10.0
-)
+#   target_include_directories(QXlsx PRIVATE
+#       ./Qt/6.10.0/gcc_64/include
+#       ./Qt/6.10.0/gcc_64/include/QtGui
+#       ./Qt/6.10.0/gcc_64/include/QtGui/private
+#       ./Qt/6.10.0/gcc_64/include/QtCore/6.10.0/QtCore
+#       ./Qt/6.10.0/gcc_64/include/QtCore/6.10.0
+#   )
 
 create_python_bindings(
     ${PROJECT_NAME}
