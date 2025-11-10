@@ -55,6 +55,10 @@ static const QString DEFAULT_QUERY_DEFINITIONS_BASE_DIRECTORY = "data";
 static const QString DEFAULT_VENV_PATH = "venv";
 static const QString DEFAULT_VERBOSITY = "debug";
 
+static const QString APPLIED_REQUIREMENTS_VALUE = "applied_requirements";
+static const QString REPLY_FROM_VA_VALUE = "reply";
+static const QString REPLY_STATUS_VALUE = "status";
+static const QString QUERY_ID_VALUE = "query_id";
 /*!
    Worker class for launching Ollama Server
  */
@@ -120,6 +124,7 @@ private:
     void onAssignTypeButtonPressed() const;
     void displayChatResponse(const QString response) const;
     void displayQueryResponse(const QString response) const;
+    void displayRequirement(const QJsonObject req, QString& reqString) const;
     Ui::VirtualAssistantDialog *ui;
 
     Requirement *m_requirement;

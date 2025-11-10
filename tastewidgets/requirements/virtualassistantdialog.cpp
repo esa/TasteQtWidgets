@@ -142,6 +142,8 @@ void VirtualAssistantDialog::onChatButtonPressed() const
 
 void VirtualAssistantDialog::queryEndPoint(QString query, QString reqIfId) const
 {
+#define SO_NOT_DEFINED
+#ifdef SO_NOT_DEFINED
     QNetworkAccessManager *mgr = new QNetworkAccessManager();
 
     QString Question;
@@ -164,7 +166,7 @@ void VirtualAssistantDialog::queryEndPoint(QString query, QString reqIfId) const
         if(reply->error() == QNetworkReply::NoError){
             QString contents = QString::fromUtf8(reply->readAll());
             ui->textEdit->setText("");
-            qDebug() << "Message received OK\n" << contents;
+            qDebug() << "Message received OK\n";
             displayQueryResponse(contents);
         }
         else{
@@ -174,6 +176,20 @@ void VirtualAssistantDialog::queryEndPoint(QString query, QString reqIfId) const
         }
         reply->deleteLater();
     });
+#else
+
+    ui->textEdit->setText("");
+    QFile file(QLatin1String("/tmp/FirstNameLastName.txt"));
+    if(!file.exists())
+    {
+        qDebug() << "file doesn't exist\n";
+    }
+    file.open(QIODevice::ReadOnly);    
+    QString contents = QString::fromUtf8(file.readAll());
+    file.close();
+    qDebug() << "Message received OK\n" ; // << contents;
+    displayQueryResponse(contents);
+#endif // SO_NOT_DEFINED
 }
 
 void VirtualAssistantDialog::onDuplicationButtonPressed() const
@@ -219,14 +235,79 @@ void VirtualAssistantDialog::displayChatResponse(const QString response) const
     }
 }
 
+void VirtualAssistantDialog::displayRequirement(const QJsonObject req, QString& reqString) const
+{
+    QJsonValue descriptionVal = req.value("description");
+    QString description = descriptionVal.toString();
+    QJsonValue idVal = req.value("id");
+    QString id = idVal.toString();
+
+    reqString += "ID: ";
+    reqString += id;
+    reqString += "\nDescription\n";
+    reqString += description;
+    reqString += "\n";
+}
+
 void VirtualAssistantDialog::displayQueryResponse(const QString response) const
 {
-    QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
-    QJsonObject json = doc.object();
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8(),&parseError);
+    QString uiTextOutput;
+    
+    if(parseError.error != QJsonParseError::NoError)
+    {
+        qDebug() << "Parse Error " << parseError.error;
+        return;
+    }
+    
+    QJsonObject root = doc.object();
 
-    QJsonValue replyValue = json.value("reply");
+    QJsonValue queryIdVal = root.value(QUERY_ID_VALUE);
+    QJsonValue statusVal  = root.value(REPLY_STATUS_VALUE);
+    QJsonValue replyVal   = root.value(REPLY_FROM_VA_VALUE);
+    
+    QJsonArray replyArray = replyVal.toArray();
+    
+    uiTextOutput += "Query : ";
+    uiTextOutput += (queryIdVal.toString()+"\n");
 
-    ui->textEdit->setText(response);
+    uiTextOutput += "Status : ";
+    uiTextOutput += (statusVal.toString()+"\n");
+
+    for(int i = 0; i < replyArray.size(); i++)
+    {
+        QJsonObject replyItemObj = replyArray[i].toObject();
+        QJsonValue replyAppliedRequirementsVal = replyItemObj.value(APPLIED_REQUIREMENTS_VALUE);
+        QJsonArray appliedRequirementsArray = replyAppliedRequirementsVal.toArray();
+        const unsigned int numAppliedRequirements = appliedRequirementsArray.size();
+        if(numAppliedRequirements > 0)
+        {
+            QJsonValue primaryRequirementVal = replyItemObj.value("requirement");
+            const QJsonObject primaryRequirementObj = primaryRequirementVal.toObject();
+            uiTextOutput += "Primary Requirement\n";
+            displayRequirement(primaryRequirementObj,uiTextOutput);
+            uiTextOutput += "\nMatched Requirements\n";
+            QString primaryRequirementId = primaryRequirementObj.value("id").toString();
+ 
+            for( unsigned int i = 0; i < numAppliedRequirements; i++)
+            {
+                const QJsonObject appliedRequirementObj = appliedRequirementsArray[i].toObject();
+                QString appliedRequirementId = appliedRequirementObj.value("id").toString();
+                if(appliedRequirementId != primaryRequirementId)
+                {
+                    displayRequirement(appliedRequirementObj,uiTextOutput);
+                }
+                else
+                {
+                    qDebug() << "duplicate main vs applied";
+                }
+            }
+            uiTextOutput += "\n\n";
+        }
+    }
+
+    ui->textEdit->setText(uiTextOutput); ;
 
 }
 
@@ -354,7 +435,8 @@ void VaWorker::runVa()
     arguments << "--requirements" << tmpExcelFile;
 
     qDebug() << "First finish";
-    m_vaProcess->setProgram(vaRoot + m_venvPath + "/bin/python3");
+    QString programToRun = vaRoot + m_venvPath + "/bin/python3";
+    m_vaProcess->setProgram(programToRun);
     m_vaProcess->setArguments(arguments);
 
     connect(m_vaProcess, &QProcess::readyReadStandardOutput, [&]() {
@@ -362,7 +444,8 @@ void VaWorker::runVa()
             qDebug() << "Python output:" << output;
         });
 
-    qDebug() << "Start VA";
+    qDebug() << "Start VA program:" << programToRun << " args: " << arguments;
+    
     m_vaProcess->start();
     m_vaProcess->waitForFinished(-1);
 

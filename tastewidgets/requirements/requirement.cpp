@@ -47,6 +47,7 @@ Requirement::Requirement()
     m_issue = gitlab::Issue();
     m_issue.mLabels = {k_requirementsTypeLabel};
     m_providence = Requirement::Created;
+
 }
 
 Requirement::Requirement(const gitlab::Issue &issue) :
@@ -73,7 +74,7 @@ Requirement::Requirement(const gitlab::Issue &issue) :
     m_issue(gitlab::Issue(issue))
 {
 //    m_issue.mLabels = {k_requirementsTypeLabel};
-}
+ }
 
 bool Requirement::isValid() const
 {

@@ -172,7 +172,7 @@ QString RequirementsWidget::token() const
 
 void RequirementsWidget::setToken(const QString &token)
 {
-    qDebug() << "Set Url";
+    qDebug() << "Set Token";
     m_targetToken = token;
     onChangeOfCredentials(m_requirementsUrl, token);
 }
@@ -229,6 +229,7 @@ void RequirementsWidget::applyEdits()
         allowDelete = true;
     }
 
+ 
     if (m_reqManager->hasValidProjectID()) {
         m_apply = true;
         ui->textEdit->clear();

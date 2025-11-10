@@ -51,12 +51,12 @@ RequirementsManager::RequirementsManager(REPO_TYPE repoType, QObject *parent)
     case (REPO_TYPE::GITLAB): {
         connect(d->gitlabClient.get(), &gitlab::QGitlabClient::listOfIssues, d->gitlabRequirements.get(),
                 &requirement::GitLabRequirements::listOfIssues);
-//        connect(d->gitlabClient.get(), &gitlab::QGitlabClient::issueCreated, this,
-//                &RequirementsManager::requirementAdded);
-//        connect(d->gitlabClient.get(), &gitlab::QGitlabClient::issueClosed, this,
-//                &RequirementsManager::requirementClosed);
+  //      connect(d->gitlabClient.get(), &gitlab::QGitlabClient::issueCreated, this,
+  //              &RequirementsManager::requirementAdded);
+  //      connect(d->gitlabClient.get(), &gitlab::QGitlabClient::issueClosed, this,
+  //              &RequirementsManager::requirementClosed);
         connect(d->gitlabClient.get(), &gitlab::QGitlabClient::issueFetchingDone, this,
-                &RequirementsManager::fetchingRequirementsEnded);
+             &RequirementsManager::fetchingRequirementsEnded);
         connect(d->gitlabClient.get(), &gitlab::QGitlabClient::listOfLabels, this, [this](QList<gitlab::Label> labels) {
             m_tagsBuffer.append(GitLabRequirements::tagsFromLabels(labels));
         });
@@ -125,17 +125,28 @@ void RequirementsManager::createRequirement(const Requirement &requirement) cons
 
     Q_EMIT reportProgress(QString("Create %1").arg(requirement.m_id));
 
-    switch (d->repoType) {
-    case (REPO_TYPE::GITLAB): {
+    switch (d->repoType) 
+    {
+        case (REPO_TYPE::GITLAB): 
+        {
+           qDebug() << "Create Issue for " << requirement.m_id;
 
-        const bool wasBusy = d->gitlabClient->createIssue(m_projectID, requirement.m_issue.mTitle, requirement.m_issue.mDescription, requirement.m_issue.mLabels);
+            const bool wasBusy = d->gitlabClient->createIssue(m_projectID, requirement.m_issue.mTitle, requirement.m_issue.mDescription, requirement.m_issue.mLabels);
 
-        if (wasBusy) qDebug() << requirement.m_id  << " Requirement NOT Created";
+            if (wasBusy)
+            {
+                qDebug() << requirement.m_id  << " Requirement NOT Created";
+            }
+         }
         return;
+    
+        default:
+        {
+            qDebug() << "unknown repository type";
+        }
+        break;
     }
-    default:
-        qDebug() << "unknown repository type";
-    }
+    return;
 }
 
 
