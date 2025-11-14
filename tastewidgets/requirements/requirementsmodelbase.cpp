@@ -259,12 +259,24 @@ void RequirementsModelBase::clearRequirements()
 
 void RequirementsModelBase::applyGitLabEdits(bool allowDelete)
 {
+    qDebug() << "RequirementsModelBase::applyGitLabEdits allowDelete = " << allowDelete;
+    
     if (allowDelete) {
         for (auto &requirement: m_deleted) {
+            qDebug() << "Deleting requirement";
             if (!reqIfIDExists(requirement.m_id)) {
                 if(requirement.m_issueIID) {
+                    qDebug() << "Removing requirement";
                     m_manager->removeRequirement(requirement);
                 }
+                else
+                {
+                   qDebug() << "Error " << __FILE__ << __LINE__;
+                }
+            }
+            else
+            {
+                qDebug() << "Error " << __FILE__ << __LINE__;
             }
         }
     }
@@ -408,6 +420,7 @@ void RequirementsModelBase::fetchingFinished()
         }
     }
     else {
+        qDebug() << __FILE__ << __LINE__;;
         if(syncRequirements())  /// Check synchronization and update the model if needed
         {
             m_syncRefs = false;
@@ -489,6 +502,7 @@ void RequirementsModelBase::createModelRequirement(Requirement &requirement)
     reqList.append(requirement);
     clearRequirements();
     addRequirements(reqList);
+    qDebug() << __FILE__ << __LINE__;;
     syncRequirements();
 //    Q_EMIT rowsChanged();
 }
@@ -502,6 +516,7 @@ void RequirementsModelBase::editModelRequirement(Requirement &requirement)
     for (int i = 0; i < m_requirements.size(); i++) {
         if (m_requirements[i].m_id.compare(requirement.m_id) == 0) {
             m_requirements[i] = requirement;
+            qDebug() << __FILE__ << __LINE__;;
             syncRequirements();
             return;
         }
@@ -520,7 +535,6 @@ void RequirementsModelBase::deleteModelRequirement(const Requirement &requiremen
         QList<Requirement> reqList;
 
         m_deleted.append(requirement);
-
         syncRequirements();
 
         for (const auto &req : m_requirements) {
@@ -660,7 +674,6 @@ bool RequirementsModelBase::syncRequirements()
     bool updated = false;
     enum modelType type;
     QList<Requirement> *req_ptr;
-
     if(m_newTarget) {
         req_ptr = &m_remote;
         type = m_exportType;
@@ -670,7 +683,7 @@ bool RequirementsModelBase::syncRequirements()
         type = m_type;
     }
 
-    qDebug() << "Sync Called " << req_ptr->size();
+    qDebug() << "Sync Called size" << req_ptr->size() << " req_ptr " << req_ptr << " type " << type;
     for (auto &requirement : *req_ptr) {
         for (const QString parent : requirement.m_parents) {
             if (reqIfIDExistsExtended(parent, req_ptr)) {
@@ -685,6 +698,7 @@ bool RequirementsModelBase::syncRequirements()
             }
             else {
                 if (type != RequirementsModelBase::SRS) {
+                    qDebug() << "Remove all SRS";
                     requirement.m_parents.removeAll(parent);
                     updated = true;
                 }
@@ -716,7 +730,7 @@ bool RequirementsModelBase::syncRequirements()
             requirement.updateIssue(req_ptr);
         }
         qDebug() << "Sync does second Issue Update";
-    }
+   }
 
     for (auto &requirement : *req_ptr) {
         if (requirement.m_issue.mIssueIID == 0) {
