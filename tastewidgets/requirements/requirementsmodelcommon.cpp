@@ -74,7 +74,7 @@ QVariant RequirementsModelCommon::headerData(int section, Qt::Orientation orient
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
         if (section == REQUIREMENT_ID) {
-            return tr("ID");
+            return tr("Requirement Identifier");
         }
         if (section == TITLE) {
             return tr("Title");

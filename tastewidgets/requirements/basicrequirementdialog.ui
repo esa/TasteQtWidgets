@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>681</width>
+    <width>857</width>
     <height>553</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>750</width>
+    <height>0</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Requirement Editor</string>
@@ -17,21 +23,61 @@
    <property name="sizeConstraint">
     <enum>QLayout::SetNoConstraint</enum>
    </property>
+   <item row="3" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QPushButton" name="browserButton">
+       <property name="text">
+        <string>Open In Browser</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="virtualassistantButton">
+       <property name="minimumSize">
+        <size>
+         <width>103</width>
+         <height>25</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Virtual Assistant</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="buttonBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
    <item row="1" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="requirementTab">
       <attribute name="title">
-       <string>Requirement</string>
+       <string>Requirements</string>
       </attribute>
       <widget class="QWidget" name="layoutWidget">
        <property name="geometry">
         <rect>
          <x>0</x>
          <y>9</y>
-         <width>641</width>
+         <width>828</width>
          <height>451</height>
         </rect>
        </property>
@@ -63,9 +109,40 @@
            <number>5</number>
           </property>
           <item>
+           <widget class="QLabel" name="titleLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Title&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            </property>
+           </widget>
+          </item>
+          <item>
            <spacer name="horizontalSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Ignored</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -76,32 +153,10 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLabel" name="titleLabel">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>40</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Title&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QLineEdit" name="titleLineEdit">
             <property name="minimumSize">
              <size>
-              <width>530</width>
+              <width>550</width>
               <height>0</height>
              </size>
             </property>
@@ -121,34 +176,21 @@
            <number>5</number>
           </property>
           <item>
-           <spacer name="horizontalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Maximum</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>29</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
            <widget class="QLabel" name="IdLabel">
             <property name="minimumSize">
              <size>
-              <width>57</width>
+              <width>100</width>
               <height>0</height>
              </size>
             </property>
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;ReqIf ID&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Requirement Identifier&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -164,7 +206,7 @@
              <widget class="QLineEdit" name="idLineEdit">
               <property name="minimumSize">
                <size>
-                <width>300</width>
+                <width>280</width>
                 <height>0</height>
                </size>
               </property>
@@ -185,7 +227,10 @@
                </size>
               </property>
               <property name="text">
-               <string>This ReqIf ID is not unique</string>
+               <string>This Requirement Identifier is not unique</string>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -205,7 +250,7 @@
            <widget class="QLabel" name="label_6">
             <property name="minimumSize">
              <size>
-              <width>86</width>
+              <width>100</width>
               <height>0</height>
              </size>
             </property>
@@ -219,7 +264,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Specification&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
@@ -259,7 +304,7 @@
            <widget class="QLabel" name="labelType">
             <property name="minimumSize">
              <size>
-              <width>60</width>
+              <width>120</width>
               <height>0</height>
              </size>
             </property>
@@ -270,10 +315,13 @@
              </size>
             </property>
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Type&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Requirement Type&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -281,7 +329,7 @@
            <widget class="QComboBox" name="typeComboBox">
             <property name="minimumSize">
              <size>
-              <width>300</width>
+              <width>180</width>
               <height>0</height>
              </size>
             </property>
@@ -295,31 +343,18 @@
            <number>10</number>
           </property>
           <item>
-           <spacer name="horizontalSpacer_3">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
            <widget class="QLabel" name="descriptionLabel">
             <property name="minimumSize">
              <size>
-              <width>75</width>
+              <width>100</width>
               <height>0</height>
              </size>
             </property>
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Description&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Requirement&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -330,7 +365,7 @@
            <widget class="QTextEdit" name="descriptionTextEdit">
             <property name="minimumSize">
              <size>
-              <width>530</width>
+              <width>700</width>
               <height>0</height>
              </size>
             </property>
@@ -379,7 +414,7 @@
              <enum>Qt::RichText</enum>
             </property>
             <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
@@ -397,15 +432,15 @@
            <widget class="QLabel" name="statusLabel">
             <property name="minimumSize">
              <size>
-              <width>80</width>
+              <width>100</width>
               <height>0</height>
              </size>
             </property>
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Status&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Requirement Status&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
@@ -413,7 +448,7 @@
            <widget class="QComboBox" name="statusComboBox">
             <property name="minimumSize">
              <size>
-              <width>200</width>
+              <width>180</width>
               <height>0</height>
              </size>
             </property>
@@ -426,7 +461,7 @@
      </widget>
      <widget class="QWidget" name="traceabilityTab">
       <attribute name="title">
-       <string>References</string>
+       <string>Traceability to Parent</string>
       </attribute>
       <widget class="QWidget" name="verticalLayoutWidget_2">
        <property name="geometry">
@@ -840,10 +875,16 @@
              </font>
             </property>
             <property name="text">
-             <string>Description</string>
+             <string>Validation Description</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+            <property name="indent">
+             <number>5</number>
             </property>
            </widget>
           </item>
@@ -871,7 +912,7 @@
              </font>
             </property>
             <property name="text">
-             <string>Status</string>
+             <string>Validation Status</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -954,10 +995,13 @@
              </font>
             </property>
             <property name="text">
-             <string>Evidence</string>
+             <string>Validation Evidence</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -1037,10 +1081,13 @@
                  </size>
                 </property>
                 <property name="text">
-                 <string>Status</string>
+                 <string>Compliance Status</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -1150,46 +1197,6 @@
       </widget>
      </widget>
     </widget>
-   </item>
-   <item row="3" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QPushButton" name="browserButton">
-       <property name="text">
-        <string>Open In Browser</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="virtualassistantButton">
-       <property name="minimumSize">
-        <size>
-         <width>103</width>
-         <height>25</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>Virtual Assistant</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QDialogButtonBox" name="buttonBox">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="standardButtons">
-        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-       </property>
-      </widget>
-     </item>
-    </layout>
    </item>
   </layout>
  </widget>

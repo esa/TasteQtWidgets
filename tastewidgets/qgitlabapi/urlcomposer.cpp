@@ -18,11 +18,13 @@ QUrlQuery UrlComposer::setQuery(const QMap<QString, QVariant> &data)
     for (const auto &key : keys) {
         if (data[key].typeId() == QMetaType::QStringList) {
             for (const auto &queryItem : data[key].toStringList()) {
+            qDebug() << " UrlComposer::setQuery : Add Query Item key" << key << " data " << queryItem;
                 query.addQueryItem(key, queryItem);
             }
         } else {
 
             if (!data[key].toString().isEmpty()) {
+            qDebug() << " UrlComposer::setQuery : Add Non-Empty Query Item key " << key << " data " << data[key].toString();
                 query.addQueryItem(key, data[key].toString());
             }
         }
