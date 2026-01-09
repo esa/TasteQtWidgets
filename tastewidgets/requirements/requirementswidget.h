@@ -123,7 +123,8 @@ protected Q_SLOTS:
     void modelSelectionChanged(const QItemSelection &selected, const QItemSelection &);
     void fillTagBar(const QStringList &tags);
     void progress(const QString &text);
-
+    void closeEvent(QCloseEvent *event) override;
+    
 Q_SIGNALS:
     void loadGitLab() const;
     void requirementSelected(QString RequirementID, bool checked);

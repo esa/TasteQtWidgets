@@ -171,7 +171,7 @@ protected:
      * \param options which can be any derived class from RequestOptions
      * \return true if there was another requestable page
      */
-    bool requestNextPage(QNetworkReply *reply, const RequestOptions &options);
+    bool requestNextPage(QNetworkReply *reply, const RequestOptions &options,bool issue);
     int pageNumberFromHeader(QNetworkReply *reply) const;
     int totalPagesFromHeader(QNetworkReply *reply) const;
     int numberHeaderAttribute(QNetworkReply *reply, const QString &headername) const;

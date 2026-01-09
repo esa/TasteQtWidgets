@@ -81,7 +81,7 @@ RequirementsManager::~RequirementsManager() { }
 bool RequirementsManager::requestAllRequirements(QString typeLabel)
 {
     QStringList labels;
-
+qDebug() << "RequirementsManager::requestAllRequirements";
     labels << k_requirementsTypeLabel;
 
     if (!typeLabel.isEmpty()) {
