@@ -94,7 +94,7 @@ private:
         "Priority",
         "Note",
         "Requirement\nStatus",
-        "Validation\nApproach",
+        "Validation\nMethod",
         "Validation\nDescription",
         "Validation\nStatus",
         "Validation\nEvidence",

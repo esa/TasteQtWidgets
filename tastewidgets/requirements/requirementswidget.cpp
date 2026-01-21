@@ -72,7 +72,8 @@ RequirementsWidget::RequirementsWidget(QWidget *parent)
     m_checkedModel.setSourceModel(&m_tagFilterModel);
 
     ui->allRequirements->setModel(&m_tagFilterModel);
-    ui->allRequirements->horizontalHeader()->setStretchLastSection(true);
+    // SO
+    ui->allRequirements->horizontalHeader()->setStretchLastSection(false);
     ui->allRequirements->setSortingEnabled(true);
 
     ui->removeRequirementButton->setEnabled(false);
@@ -146,12 +147,15 @@ void RequirementsWidget::setModel(RequirementsModelBase *model)
 
 //    ui->allRequirements->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
 //    ui->allRequirements->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
-
+ 
+    ui->allRequirements->horizontalHeader()->setStretchLastSection(false);
     ui->allRequirements->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     ui->allRequirements->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+    ui->allRequirements->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
 
-    ui->allRequirements->setColumnWidth(0, 160);
-    ui->allRequirements->setColumnWidth(1, 500);
+    ui->allRequirements->setColumnWidth(0, 200);
+    ui->allRequirements->setColumnWidth(1, 636);
+    ui->allRequirements->setColumnWidth(2, 100);
 
     connect(m_model, &requirement::RequirementsModelBase::exportCompleted, this, &RequirementsWidget::workingCompleted);
  
@@ -741,6 +745,7 @@ void RequirementsWidget::onClear()
 
 void RequirementsWidget::closeEvent(QCloseEvent *event)
 {
+qDebug() << "RequirementsWidget::closeEvent ";
     QMessageBox::StandardButton reply;
     reply = QMessageBox::question(this, tr("Close "), tr("Are you sure?"), QMessageBox::Yes | QMessageBox::Cancel);
     if (reply == QMessageBox::Yes)
