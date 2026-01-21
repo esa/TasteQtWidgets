@@ -429,7 +429,7 @@ void VaWorker::runVa()
     arguments << vaRoot + m_venvPath + "/bin/vareq";
     arguments << "--mode" << "serve";
     arguments << "--verbosity" << m_verbosity;
-    arguments << "--config-path" << vaRoot + m_configFilePath;
+ //   arguments << "--config-path" << vaRoot + m_configFilePath;
     arguments << "--query-definitions-path" << vaRoot + m_queryDefinitionsFilePath;
     arguments << "--query-definitions-base-directory" << vaRoot + m_queryDefinitionsBaseDirectory;
     arguments << "--requirements" << tmpExcelFile;
