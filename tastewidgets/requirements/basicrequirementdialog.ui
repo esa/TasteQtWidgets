@@ -66,7 +66,7 @@
    <item row="1" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="requirementTab">
       <attribute name="title">
@@ -78,7 +78,7 @@
          <x>0</x>
          <y>9</y>
          <width>828</width>
-         <height>451</height>
+         <height>401</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -135,22 +135,6 @@
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
             </property>
            </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Ignored</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
           </item>
           <item>
            <widget class="QLineEdit" name="titleLineEdit">
@@ -379,7 +363,7 @@
            <number>5</number>
           </property>
           <property name="leftMargin">
-           <number>10</number>
+           <number>0</number>
           </property>
           <property name="topMargin">
            <number>5</number>
@@ -394,7 +378,7 @@
            <widget class="QLabel" name="priorityLabel">
             <property name="minimumSize">
              <size>
-              <width>75</width>
+              <width>100</width>
               <height>0</height>
              </size>
             </property>
@@ -422,8 +406,14 @@
            <widget class="QComboBox" name="priorityComboBox">
             <property name="minimumSize">
              <size>
-              <width>200</width>
+              <width>180</width>
               <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>200</width>
+              <height>16777215</height>
              </size>
             </property>
            </widget>
@@ -436,11 +426,17 @@
               <height>0</height>
              </size>
             </property>
+            <property name="maximumSize">
+             <size>
+              <width>150</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Requirement Status&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
@@ -448,7 +444,7 @@
            <widget class="QComboBox" name="statusComboBox">
             <property name="minimumSize">
              <size>
-              <width>180</width>
+              <width>150</width>
               <height>0</height>
              </size>
             </property>
