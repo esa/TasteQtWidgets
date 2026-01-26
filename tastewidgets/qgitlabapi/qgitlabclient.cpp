@@ -57,7 +57,7 @@ bool QGitlabClient::requestIssues(const IssueRequestOptions &options)
                 Q_EMIT listOfIssues(issues);
             }
 
-            if (!requestNextPage(reply, options)) {
+            if (!requestNextPage(reply, options,true)) {
                 setBusy(false);
                 Q_EMIT issueFetchingDone();
             }
@@ -162,7 +162,7 @@ bool QGitlabClient::requestListofLabels(const LabelsRequestOptions &options)
                 }
                 Q_EMIT listOfLabels(labels);
             }
-            if (!requestNextPage(reply, options)) {
+            if (!requestNextPage(reply, options,false)) {
                 setBusy(false);
                 Q_EMIT labelsFetchingDone();
             }
@@ -380,22 +380,32 @@ QNetworkReply *QGitlabClient::sendRequest(QGitlabClient::ReqType reqType, const 
     return reply;
 }
 
-bool QGitlabClient::requestNextPage(QNetworkReply *reply, const RequestOptions &options)
+bool QGitlabClient::requestNextPage(QNetworkReply *reply, const RequestOptions &options, bool issue)
 {
     int page = pageNumberFromHeader(reply);
     const int totalPages = totalPagesFromHeader(reply);
     if (page >= 0 && totalPages >= 0) {
         if (page < totalPages) {
-            if (isIssueRequest(reply)) {
-                IssueRequestOptions nextPage = dynamic_cast<const IssueRequestOptions &>(options);
-                nextPage.mPage = page + 1;
-                m_busy = false; // workaround to enable request for the next page
-                requestIssues(nextPage);
+            if (issue) {
+            try{
+                    IssueRequestOptions nextPage = dynamic_cast<const IssueRequestOptions &>(options);
+                    nextPage.mPage = page + 1;
+                    m_busy = false; // workaround to enable request for the next page
+                    requestIssues(nextPage);
+                }
+                catch(std::bad_cast){
+                    qDebug() << "Caught bad cast to IssueRequestOptions";
+                }
             } else {
-                LabelsRequestOptions nextPage = dynamic_cast<const LabelsRequestOptions &>(options);
-                nextPage.mPage = page + 1;
-                m_busy = false; // workaround to enable request for the next page
-                requestListofLabels(nextPage);
+                try{
+                    LabelsRequestOptions nextPage = dynamic_cast<const LabelsRequestOptions &>(options);
+                    nextPage.mPage = page + 1;
+                    m_busy = false; // workaround to enable request for the next page
+                    requestListofLabels(nextPage);
+                }
+                catch(std::bad_cast){
+                    qDebug() << "Caught bad cast to LabelsRequestOptions";
+                }
             }
             return true;
         }

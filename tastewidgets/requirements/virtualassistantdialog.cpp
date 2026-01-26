@@ -142,8 +142,6 @@ void VirtualAssistantDialog::onChatButtonPressed() const
 
 void VirtualAssistantDialog::queryEndPoint(QString query, QString reqIfId) const
 {
-#define SO_NOT_DEFINED
-#ifdef SO_NOT_DEFINED
     QNetworkAccessManager *mgr = new QNetworkAccessManager();
 
     QString Question;
@@ -176,20 +174,6 @@ void VirtualAssistantDialog::queryEndPoint(QString query, QString reqIfId) const
         }
         reply->deleteLater();
     });
-#else
-
-    ui->textEdit->setText("");
-    QFile file(QLatin1String("/tmp/FirstNameLastName.txt"));
-    if(!file.exists())
-    {
-        qDebug() << "file doesn't exist\n";
-    }
-    file.open(QIODevice::ReadOnly);    
-    QString contents = QString::fromUtf8(file.readAll());
-    file.close();
-    qDebug() << "Message received OK\n" ; // << contents;
-    displayQueryResponse(contents);
-#endif // SO_NOT_DEFINED
 }
 
 void VirtualAssistantDialog::onDuplicationButtonPressed() const
@@ -429,7 +413,6 @@ void VaWorker::runVa()
     arguments << vaRoot + m_venvPath + "/bin/vareq";
     arguments << "--mode" << "serve";
     arguments << "--verbosity" << m_verbosity;
-    arguments << "--config-path" << vaRoot + m_configFilePath;
     arguments << "--query-definitions-path" << vaRoot + m_queryDefinitionsFilePath;
     arguments << "--query-definitions-base-directory" << vaRoot + m_queryDefinitionsBaseDirectory;
     arguments << "--requirements" << tmpExcelFile;
