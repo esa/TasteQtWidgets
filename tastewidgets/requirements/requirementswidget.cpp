@@ -72,7 +72,7 @@ RequirementsWidget::RequirementsWidget(QWidget *parent)
     m_checkedModel.setSourceModel(&m_tagFilterModel);
 
     ui->allRequirements->setModel(&m_tagFilterModel);
-    // SO
+ 
     ui->allRequirements->horizontalHeader()->setStretchLastSection(false);
     ui->allRequirements->setSortingEnabled(true);
 
@@ -284,6 +284,7 @@ void RequirementsWidget::setLoginData()
     bool before = false;
 
     if (!m_reqManager) {
+        qDebug() << "login empty";
         return;
     }
 
@@ -747,8 +748,8 @@ void RequirementsWidget::closeEvent(QCloseEvent *event)
 {
 qDebug() << "RequirementsWidget::closeEvent ";
     QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, tr("Close "), tr("Are you sure?"), QMessageBox::Yes | QMessageBox::Cancel);
-    if (reply == QMessageBox::Yes)
+    reply = QMessageBox::question(this, tr("Close "), tr("You may have  requirement changes not yet committed to Gitlab. Press  'Cancel' and 'Apply Edits' to commit them  or 'Close' to Exit."), QMessageBox::Close | QMessageBox::Cancel);
+    if (reply == QMessageBox::Close)
     {
         event->accept();
     }
