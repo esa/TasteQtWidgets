@@ -284,8 +284,7 @@ void RequirementsWidget::setLoginData()
     bool before = false;
 
     if (!m_reqManager) {
-        qDebug() << "login empty";
-        return;
+         return;
     }
 
     while (m_reqManager->isBusy()) {
@@ -293,6 +292,7 @@ void RequirementsWidget::setLoginData()
     }
 
     if (m_requirementsUrl.isEmpty() || m_requirementsToken.isEmpty()) {
+        qDebug() << "login empty";
         return;
     }
 
