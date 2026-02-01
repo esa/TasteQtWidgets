@@ -138,14 +138,30 @@ void RequirementsWidget::setModel(RequirementsModelBase *model)
     m_model = model;
     m_textFilterModel.setSourceModel(m_model);
 
-    ui->allRequirements->horizontalHeader()->setStretchLastSection(false);
-    ui->allRequirements->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
-    ui->allRequirements->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
-    ui->allRequirements->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
+    // Make the id column size itself to contents, the title column STRETCH to fill
+    // the available width and keep the checkbox column a small fixed width so
+    // clicking it does not cause the view to shift or a horizontal scrollbar to appear.
+    //
+    // Use ResizeToContents for column 0 so long IDs don't unnecessarily waste space,
+    // Stretch for the main text column so it absorbs remaining space, and Fixed
+    // for the checkbox column to keep it narrow.
+    QHeaderView *h = ui->allRequirements->horizontalHeader();
+    h->setStretchLastSection(false);
+    h->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    h->setSectionResizeMode(1, QHeaderView::Stretch);
+    h->setSectionResizeMode(2, QHeaderView::Fixed);
 
-    ui->allRequirements->setColumnWidth(0, 200);
-    ui->allRequirements->setColumnWidth(1, 636);
-    ui->allRequirements->setColumnWidth(2, 100);
+    // Small fixed width for checkbox column (enough for a checkbox + padding)
+    ui->allRequirements->setColumnWidth(2, 75);
+
+    // Avoid horizontal scrollbar; columns will resize to fit the viewport.
+    ui->allRequirements->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    // Make the table adjust column sizes when the viewport changes
+    ui->allRequirements->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    // Prefer per-pixel scrolling for smoother behaviour (optional)
+    ui->allRequirements->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    // Avoid wrapping text in cells (helps the stretch behaviour)
+    ui->allRequirements->setWordWrap(false);
 
     connect(m_model, &requirement::RequirementsModelBase::exportCompleted, this, &RequirementsWidget::workingCompleted);
  
