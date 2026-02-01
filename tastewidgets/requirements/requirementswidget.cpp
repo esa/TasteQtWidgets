@@ -38,6 +38,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include <QtCore>
 #include <QInputDialog>
 #include <QDomDocument>
+#include <QCloseEvent>
 #include "xlsxdocument.h"
 #include "xlsxrichstring.h"
 #include "xlsxworkbook.h"
@@ -71,7 +72,8 @@ RequirementsWidget::RequirementsWidget(QWidget *parent)
     m_checkedModel.setSourceModel(&m_tagFilterModel);
 
     ui->allRequirements->setModel(&m_tagFilterModel);
-    ui->allRequirements->horizontalHeader()->setStretchLastSection(true);
+ 
+    ui->allRequirements->horizontalHeader()->setStretchLastSection(false);
     ui->allRequirements->setSortingEnabled(true);
 
     ui->removeRequirementButton->setEnabled(false);
@@ -143,13 +145,20 @@ void RequirementsWidget::setModel(RequirementsModelBase *model)
     m_model = model;
     m_textFilterModel.setSourceModel(m_model);
 
-    ui->allRequirements->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
-    ui->allRequirements->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
+//    ui->allRequirements->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
+//    ui->allRequirements->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
+ 
+    ui->allRequirements->horizontalHeader()->setStretchLastSection(false);
+    ui->allRequirements->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+    ui->allRequirements->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+    ui->allRequirements->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
 
-    ui->allRequirements->setColumnWidth(0, 160);
-    ui->allRequirements->setColumnWidth(1, 500);
+    ui->allRequirements->setColumnWidth(0, 200);
+    ui->allRequirements->setColumnWidth(1, 636);
+    ui->allRequirements->setColumnWidth(2, 100);
 
     connect(m_model, &requirement::RequirementsModelBase::exportCompleted, this, &RequirementsWidget::workingCompleted);
+ 
 
 }
 
@@ -275,7 +284,7 @@ void RequirementsWidget::setLoginData()
     bool before = false;
 
     if (!m_reqManager) {
-        return;
+         return;
     }
 
     while (m_reqManager->isBusy()) {
@@ -290,6 +299,7 @@ void RequirementsWidget::setLoginData()
     m_model->clearRequirements();
 
     if (m_requirementsUrl == m_reqManager->projectUrl() && m_requirementsToken == m_reqManager->token()) {
+  
         m_reqManager->requestAllRequirements("");
         ui->sourceLineEdit->setText(m_requirementsUrl);
         ui->applyPushButton->setEnabled(true);
@@ -405,6 +415,7 @@ void RequirementsWidget::fillTagBar(const QStringList &tags)
     for (const QString &tag : tags) {
         if (!tagButtonExists(tag)) {
             auto button = new QToolButton(m_widgetBar);
+
             button->setText(tag);
             button->setCheckable(true);
             connect(button, &QToolButton::toggled, this, [this](bool checked) {
@@ -733,5 +744,18 @@ void RequirementsWidget::onClear()
     ui->applyPushButton->setEnabled(false);
 }
 
-
+void RequirementsWidget::closeEvent(QCloseEvent *event)
+{
+qDebug() << "RequirementsWidget::closeEvent ";
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, tr("Close "), tr("You may have  requirement changes not yet committed to Gitlab. Press  'Cancel' and 'Apply Edits' to commit them  or 'Close' to Exit."), QMessageBox::Close | QMessageBox::Cancel);
+    if (reply == QMessageBox::Close)
+    {
+        event->accept();
+    }
+    else
+    {
+        event->ignore();
+    }
+}
 }

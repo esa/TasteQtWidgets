@@ -502,7 +502,7 @@ void RequirementsModelBase::createModelRequirement(Requirement &requirement)
     reqList.append(requirement);
     clearRequirements();
     addRequirements(reqList);
-    qDebug() << __FILE__ << __LINE__;;
+
     syncRequirements();
 //    Q_EMIT rowsChanged();
 }
@@ -516,7 +516,6 @@ void RequirementsModelBase::editModelRequirement(Requirement &requirement)
     for (int i = 0; i < m_requirements.size(); i++) {
         if (m_requirements[i].m_id.compare(requirement.m_id) == 0) {
             m_requirements[i] = requirement;
-            qDebug() << __FILE__ << __LINE__;;
             syncRequirements();
             return;
         }
