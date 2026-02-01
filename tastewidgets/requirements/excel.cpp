@@ -186,6 +186,8 @@ void Excel::importExcel()
         m_model->clearRequirements();
         m_model->addRequirements(reqList);
         m_model->syncRequirements();
+        // Imported requirements are local until exported to GitLab -> mark pending edits
+        m_model->setPendingEdits(true);
     } else {
         qDebug() << "ERROR - Excel import failed";
     }

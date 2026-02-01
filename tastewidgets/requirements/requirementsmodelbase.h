@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2025 European Space Agency - <maxime.perrotin@esa.int>
+   Copyright (C) 2026 European Space Agency - <maxime.perrotin@esa.int>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -52,7 +52,14 @@ public:
     void createModelRequirement(Requirement &requirement);
     void editModelRequirement(Requirement &requirement);
     void deleteModelRequirement(const Requirement &requirement);
+    /* Remove a requirement from the local model without adding it to m_deleted.
+       Use this when the deletion has already been applied on the server. */
+    void deleteModelRequirementDirect(const Requirement &requirement);
     void applyGitLabEdits(bool allowDelete);
+    /*! Mark/unmark that the model has pending local edits that need export */
+    void setPendingEdits(bool pending);
+    /*! Returns true when there are pending deletions/edits that still need Apply Edits */
+    bool hasPendingEdits() const;
     QList<Requirement>* getRequirements() { return &m_requirements; };
     bool syncRequirements();
     QStringList unreferencedFromId(const QString &reqIfID) const;
@@ -128,6 +135,7 @@ private:
     volatile bool m_edit;
     volatile bool m_local;
     volatile bool m_syncRefs;
+    volatile bool m_pendingEdits;
     volatile bool m_checkingServer;
     QList<Requirement> m_export;
     QList<Requirement> m_remote;

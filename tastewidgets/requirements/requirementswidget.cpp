@@ -132,33 +132,49 @@ void RequirementsWidget::setManager(RequirementsManager *manager)
 
 }
 
-#if 0
-void RequirementsWidget::setModel(RequirementsModelCommon *model)
-{
-    RequirementsModelBase *derivedModel = new RequirementsModelBase(model);
-    setModel(derivedModel);
-}
-#endif
 void RequirementsWidget::setModel(RequirementsModelBase *model)
 {
     qDebug() << "Set Model";
     m_model = model;
     m_textFilterModel.setSourceModel(m_model);
 
-//    ui->allRequirements->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
-//    ui->allRequirements->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
- 
-    ui->allRequirements->horizontalHeader()->setStretchLastSection(false);
-    ui->allRequirements->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
-    ui->allRequirements->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
-    ui->allRequirements->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
+    // Make the id column size itself to contents, the title column STRETCH to fill
+    // the available width and keep the checkbox column a small fixed width so
+    // clicking it does not cause the view to shift or a horizontal scrollbar to appear.
+    //
+    // Use ResizeToContents for column 0 so long IDs don't unnecessarily waste space,
+    // Stretch for the main text column so it absorbs remaining space, and Fixed
+    // for the checkbox column to keep it narrow.
+    QHeaderView *h = ui->allRequirements->horizontalHeader();
+    h->setStretchLastSection(false);
+    h->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    h->setSectionResizeMode(1, QHeaderView::Stretch);
+    h->setSectionResizeMode(2, QHeaderView::Fixed);
 
-    ui->allRequirements->setColumnWidth(0, 200);
-    ui->allRequirements->setColumnWidth(1, 636);
-    ui->allRequirements->setColumnWidth(2, 100);
+    // Small fixed width for checkbox column (enough for a checkbox + padding)
+    ui->allRequirements->setColumnWidth(2, 75);
+
+    // Avoid horizontal scrollbar; columns will resize to fit the viewport.
+    ui->allRequirements->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    // Make the table adjust column sizes when the viewport changes
+    ui->allRequirements->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    // Prefer per-pixel scrolling for smoother behaviour (optional)
+    ui->allRequirements->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    // Avoid wrapping text in cells (helps the stretch behaviour)
+    ui->allRequirements->setWordWrap(false);
 
     connect(m_model, &requirement::RequirementsModelBase::exportCompleted, this, &RequirementsWidget::workingCompleted);
  
+    // When a requirement is selected/deselected, emit a signal (useful for Python backends)
+    connect(m_model, &requirement::RequirementsModelBase::dataChanged, [this](const QModelIndex &index) {
+        if (index.column() == RequirementsModelBase::CHECKED) {
+            bool isChecked = m_model->data(index, Qt::CheckStateRole).toBool();
+            QModelIndex reqID_index = m_model->index(index.row(), RequirementsModelBase::REQUIREMENT_ID);
+            QString ReqID = m_model->data(reqID_index, Qt::DisplayRole).toString();
+            Q_EMIT requirementSelected(ReqID, isChecked);
+        }
+    });
+
 
 }
 
@@ -664,6 +680,10 @@ void RequirementsWidget::showImportReqIfFileRequirementsDialog(enum Requirements
 
          setModelTypeLabel(m_model->getState());
          ui->sourceLineEdit->setText(fileName);
+         // Imported requirements are local until exported to GitLab -> mark pending edits
+         if (m_model) {
+             m_model->setPendingEdits(true);
+         }
          if(!m_embedded)
          {
              ui->applyPushButton->setEnabled(false);
@@ -718,11 +738,43 @@ void RequirementsWidget::removeRequirement()
     reply = QMessageBox::question(this, tr("Remove requirement"),
             tr("Are you sure you want to remove the selected requirement?"), QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
-        const auto &currentIndex = ui->allRequirements->selectionModel()->currentIndex();
-        if (currentIndex.isValid()) {
-            const QString reqIfID = currentIndex.data(RequirementsModelCommon::ReqIfIdRole).toString();
+        auto selectionModel = ui->allRequirements->selectionModel();
+        if (!selectionModel) {
+            return;
+        }
+
+        // Collect unique selected rows (one index per row).
+        const QModelIndexList rows = selectionModel->selectedRows();
+        if (rows.isEmpty()) {
+            return;
+        }
+
+        // Build a list of unique ReqIf IDs to remove.
+        QStringList reqIfIDs;
+        reqIfIDs.reserve(rows.size());
+        for (const QModelIndex &rowIndex : rows) {
+            const QString reqIfID = rowIndex.data(RequirementsModelCommon::ReqIfIdRole).toString();
+            if (!reqIfID.isEmpty() && !reqIfIDs.contains(reqIfID)) {
+                reqIfIDs.append(reqIfID);
+            }
+        }
+
+        // Remove each selected requirement. Use the same immediate-vs-queued logic as before.
+        for (const QString &reqIfID : reqIfIDs) {
             const Requirement requirement = m_model->requirementFromId(reqIfID);
-            if (requirement.isValid()) {
+            if (!requirement.isValid()) {
+                continue;
+            }
+
+            if (requirement.m_issueIID && m_reqManager->hasValidProjectID()) {
+                // Remove on GitLab immediately, wait for completion, then remove locally without queuing.
+                m_reqManager->removeRequirement(requirement);
+                while (m_reqManager->isBusy()) {
+                    QApplication::processEvents();
+                }
+                m_model->deleteModelRequirementDirect(requirement);
+            } else {
+                // Local-only requirement: mark for deletion to be applied later.
                 m_model->deleteModelRequirement(requirement);
             }
         }
@@ -747,14 +799,17 @@ void RequirementsWidget::onClear()
 void RequirementsWidget::closeEvent(QCloseEvent *event)
 {
 qDebug() << "RequirementsWidget::closeEvent ";
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, tr("Close "), tr("You may have  requirement changes not yet committed to Gitlab. Press  'Cancel' and 'Apply Edits' to commit them  or 'Close' to Exit."), QMessageBox::Close | QMessageBox::Cancel);
-    if (reply == QMessageBox::Close)
-    {
+    // If there are no pending edits queued in the model, allow close without warning.
+    if (m_model && !m_model->hasPendingEdits()) {
         event->accept();
+        return;
     }
-    else
-    {
+
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, tr("Close "), tr("You may have requirement changes not yet committed to Gitlab. Press 'Cancel' and 'Apply Edits' to commit them or 'Close' to Exit."), QMessageBox::Close | QMessageBox::Cancel);
+    if (reply == QMessageBox::Close) {
+        event->accept();
+    } else {
         event->ignore();
     }
 }
