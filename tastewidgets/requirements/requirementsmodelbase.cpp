@@ -32,6 +32,7 @@ RequirementsModelBase::RequirementsModelBase(requirement::RequirementsManager *m
     , m_type(Both)
     , m_checkingServer(false)
     , m_deleted(QList<Requirement>())
+    , m_pendingEdits(false)
     , m_remote(QList<Requirement>())
 {
 //    m_local = false;
@@ -583,6 +584,23 @@ void RequirementsModelBase::deleteModelRequirementDirect(const Requirement &requ
         clearRequirements();
         addRequirements(reqList);
     }
+}
+
+void RequirementsModelBase::setPendingEdits(bool pending)
+{
+    m_pendingEdits = pending;
+}
+
+/*!
+ * \brief Returns true when there are pending deletions/edits that still require Apply Edits
+ *
+ * Currently the model uses m_deleted to track deletions that will be applied
+ * when Apply Edits is pressed. If this list is empty there are no pending
+ * edits to commit to GitLab.
+ */
+bool RequirementsModelBase::hasPendingEdits() const
+{
+    return m_pendingEdits || !m_deleted.isEmpty();
 }
 
 /*!

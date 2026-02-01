@@ -664,6 +664,10 @@ void RequirementsWidget::showImportReqIfFileRequirementsDialog(enum Requirements
 
          setModelTypeLabel(m_model->getState());
          ui->sourceLineEdit->setText(fileName);
+         // Imported requirements are local until exported to GitLab -> mark pending edits
+         if (m_model) {
+             m_model->setPendingEdits(true);
+         }
          if(!m_embedded)
          {
              ui->applyPushButton->setEnabled(false);
@@ -718,25 +722,44 @@ void RequirementsWidget::removeRequirement()
     reply = QMessageBox::question(this, tr("Remove requirement"),
             tr("Are you sure you want to remove the selected requirement?"), QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
-        const auto &currentIndex = ui->allRequirements->selectionModel()->currentIndex();
-        if (currentIndex.isValid()) {
-            const QString reqIfID = currentIndex.data(RequirementsModelCommon::ReqIfIdRole).toString();
+        auto selectionModel = ui->allRequirements->selectionModel();
+        if (!selectionModel) {
+            return;
+        }
+
+        // Collect unique selected rows (one index per row).
+        const QModelIndexList rows = selectionModel->selectedRows();
+        if (rows.isEmpty()) {
+            return;
+        }
+
+        // Build a list of unique ReqIf IDs to remove.
+        QStringList reqIfIDs;
+        reqIfIDs.reserve(rows.size());
+        for (const QModelIndex &rowIndex : rows) {
+            const QString reqIfID = rowIndex.data(RequirementsModelCommon::ReqIfIdRole).toString();
+            if (!reqIfID.isEmpty() && !reqIfIDs.contains(reqIfID)) {
+                reqIfIDs.append(reqIfID);
+            }
+        }
+
+        // Remove each selected requirement. Use the same immediate-vs-queued logic as before.
+        for (const QString &reqIfID : reqIfIDs) {
             const Requirement requirement = m_model->requirementFromId(reqIfID);
-            if (requirement.isValid()) {
-                // If the requirement exists on the server and we have a valid project id,
-                // remove it directly on GitLab and then remove it locally without queuing.
-                if (requirement.m_issueIID && m_reqManager->hasValidProjectID()) {
-                    m_reqManager->removeRequirement(requirement);
-                    // Wait for async manager to become idle (existing code pattern)
-                    while (m_reqManager->isBusy()) {
-                        QApplication::processEvents();
-                    }
-                    // Remove from local model without adding to m_deleted
-                    m_model->deleteModelRequirementDirect(requirement);
-                } else {
-                    // Fallback: mark deletion in model for later 'Apply Edits'
-                    m_model->deleteModelRequirement(requirement);
+            if (!requirement.isValid()) {
+                continue;
+            }
+
+            if (requirement.m_issueIID && m_reqManager->hasValidProjectID()) {
+                // Remove on GitLab immediately, wait for completion, then remove locally without queuing.
+                m_reqManager->removeRequirement(requirement);
+                while (m_reqManager->isBusy()) {
+                    QApplication::processEvents();
                 }
+                m_model->deleteModelRequirementDirect(requirement);
+            } else {
+                // Local-only requirement: mark for deletion to be applied later.
+                m_model->deleteModelRequirement(requirement);
             }
         }
     }
@@ -760,14 +783,17 @@ void RequirementsWidget::onClear()
 void RequirementsWidget::closeEvent(QCloseEvent *event)
 {
 qDebug() << "RequirementsWidget::closeEvent ";
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, tr("Close "), tr("You may have  requirement changes not yet committed to Gitlab. Press  'Cancel' and 'Apply Edits' to commit them  or 'Close' to Exit."), QMessageBox::Close | QMessageBox::Cancel);
-    if (reply == QMessageBox::Close)
-    {
+    // If there are no pending edits queued in the model, allow close without warning.
+    if (m_model && !m_model->hasPendingEdits()) {
         event->accept();
+        return;
     }
-    else
-    {
+
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, tr("Close "), tr("You may have requirement changes not yet committed to Gitlab. Press 'Cancel' and 'Apply Edits' to commit them or 'Close' to Exit."), QMessageBox::Close | QMessageBox::Cancel);
+    if (reply == QMessageBox::Close) {
+        event->accept();
+    } else {
         event->ignore();
     }
 }
