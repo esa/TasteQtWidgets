@@ -132,22 +132,12 @@ void RequirementsWidget::setManager(RequirementsManager *manager)
 
 }
 
-#if 0
-void RequirementsWidget::setModel(RequirementsModelCommon *model)
-{
-    RequirementsModelBase *derivedModel = new RequirementsModelBase(model);
-    setModel(derivedModel);
-}
-#endif
 void RequirementsWidget::setModel(RequirementsModelBase *model)
 {
     qDebug() << "Set Model";
     m_model = model;
     m_textFilterModel.setSourceModel(m_model);
 
-//    ui->allRequirements->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
-//    ui->allRequirements->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
- 
     ui->allRequirements->horizontalHeader()->setStretchLastSection(false);
     ui->allRequirements->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     ui->allRequirements->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
@@ -159,6 +149,16 @@ void RequirementsWidget::setModel(RequirementsModelBase *model)
 
     connect(m_model, &requirement::RequirementsModelBase::exportCompleted, this, &RequirementsWidget::workingCompleted);
  
+    // When a requirement is selected/deselected, emit a signal (useful for Python backends)
+    connect(m_model, &requirement::RequirementsModelBase::dataChanged, [this](const QModelIndex &index) {
+        if (index.column() == RequirementsModelBase::CHECKED) {
+            bool isChecked = m_model->data(index, Qt::CheckStateRole).toBool();
+            QModelIndex reqID_index = m_model->index(index.row(), RequirementsModelBase::REQUIREMENT_ID);
+            QString ReqID = m_model->data(reqID_index, Qt::DisplayRole).toString();
+            Q_EMIT requirementSelected(ReqID, isChecked);
+        }
+    });
+
 
 }
 
