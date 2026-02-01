@@ -52,6 +52,9 @@ public:
     void createModelRequirement(Requirement &requirement);
     void editModelRequirement(Requirement &requirement);
     void deleteModelRequirement(const Requirement &requirement);
+    /* Remove a requirement from the local model without adding it to m_deleted.
+       Use this when the deletion has already been applied on the server. */
+    void deleteModelRequirementDirect(const Requirement &requirement);
     void applyGitLabEdits(bool allowDelete);
     QList<Requirement>* getRequirements() { return &m_requirements; };
     bool syncRequirements();

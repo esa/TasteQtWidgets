@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2025 European Space Agency - <maxime.perrotin@esa.int>
+   Copyright (C) 2026 European Space Agency - <maxime.perrotin@esa.int>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -534,6 +534,27 @@ void RequirementsModelBase::deleteModelRequirement(const Requirement &requiremen
         QList<Requirement> reqList;
 
         m_deleted.append(requirement);
+        syncRequirements();
+
+        for (const auto &req : m_requirements) {
+            reqList.append(req);
+        }
+
+        clearRequirements();
+        addRequirements(reqList);
+    }
+}
+
+/*!
+ * \brief Removes a requirement from the current requirements model without
+ *        adding it to the deleted list (server-side deletion already done).
+ */
+void RequirementsModelBase::deleteModelRequirementDirect(const Requirement &requirement)
+{
+    if(m_requirements.removeAll(requirement)) {
+        QList<Requirement> reqList;
+
+        // No m_deleted append here because the deletion has been performed on the server.
         syncRequirements();
 
         for (const auto &req : m_requirements) {

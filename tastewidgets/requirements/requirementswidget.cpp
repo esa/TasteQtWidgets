@@ -723,7 +723,20 @@ void RequirementsWidget::removeRequirement()
             const QString reqIfID = currentIndex.data(RequirementsModelCommon::ReqIfIdRole).toString();
             const Requirement requirement = m_model->requirementFromId(reqIfID);
             if (requirement.isValid()) {
-                m_model->deleteModelRequirement(requirement);
+                // If the requirement exists on the server and we have a valid project id,
+                // remove it directly on GitLab and then remove it locally without queuing.
+                if (requirement.m_issueIID && m_reqManager->hasValidProjectID()) {
+                    m_reqManager->removeRequirement(requirement);
+                    // Wait for async manager to become idle (existing code pattern)
+                    while (m_reqManager->isBusy()) {
+                        QApplication::processEvents();
+                    }
+                    // Remove from local model without adding to m_deleted
+                    m_model->deleteModelRequirementDirect(requirement);
+                } else {
+                    // Fallback: mark deletion in model for later 'Apply Edits'
+                    m_model->deleteModelRequirement(requirement);
+                }
             }
         }
     }
