@@ -504,7 +504,17 @@ void RequirementsModelBase::createModelRequirement(Requirement &requirement)
     addRequirements(reqList);
 
     syncRequirements();
-//    Q_EMIT rowsChanged();
+    // Immediately request creation on GitLab (if manager configured).
+    // RequirementsModelBase already connects newRequirement -> RequirementsManager::createRequirement
+    if (m_manager && m_manager->hasValidProjectID()) {
+        Q_EMIT newRequirement(requirement);
+        // wait for async manager to finish (pattern used elsewhere)
+        while (m_manager->isBusy()) {
+            QThread::msleep(100);
+            QApplication::processEvents();
+        }
+    }
+
 }
 
 /*!
@@ -517,6 +527,15 @@ void RequirementsModelBase::editModelRequirement(Requirement &requirement)
         if (m_requirements[i].m_id.compare(requirement.m_id) == 0) {
             m_requirements[i] = requirement;
             syncRequirements();
+            // Immediately request update on GitLab (if manager configured).
+            // RequirementsModelBase already connects updateRequirement -> RequirementsManager::editRequirement
+            if (m_manager && m_manager->hasValidProjectID()) {
+                Q_EMIT updateRequirement(requirement);
+                while (m_manager->isBusy()) {
+                    QThread::msleep(100);
+                    QApplication::processEvents();
+                }
+            }
             return;
         }
     }
