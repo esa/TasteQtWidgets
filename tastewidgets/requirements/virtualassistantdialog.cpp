@@ -397,7 +397,6 @@ void VaWorker::writeConfigData()
 
     settings.sync();
 }
-
 void VaWorker::runVa()
 {
     m_vaProcess = new QProcess();
@@ -422,16 +421,46 @@ void VaWorker::runVa()
     m_vaProcess->setProgram(programToRun);
     m_vaProcess->setArguments(arguments);
 
-    connect(m_vaProcess, &QProcess::readyReadStandardOutput, [&]() {
-            QByteArray output = m_vaProcess->readAllStandardOutput();
-            qDebug() << "Python output:" << output;
-        });
+    // Capture stdout
+    connect(m_vaProcess, &QProcess::readyReadStandardOutput, this, [this]() {
+        QByteArray output = m_vaProcess->readAllStandardOutput();
+        qDebug() << "Python stdout:" << output;
+    });
 
-    qDebug() << "Start VA program:" << programToRun << " args: " << arguments;
+    // Capture stderr - THIS IS IMPORTANT FOR DEBUGGING
+    connect(m_vaProcess, &QProcess::readyReadStandardError, this, [this]() {
+        QByteArray error = m_vaProcess->readAllStandardError();
+        qWarning() << "Python stderr:" << error;
+    });
+
+    // Handle process finished - accepts both exitCode and exitStatus
+    connect(m_vaProcess, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), 
+            this, [this](int exitCode, QProcess::ExitStatus exitStatus) {
+        qDebug() << "Process finished with exit code:" << exitCode << "Exit status:" << (int)exitStatus;
+    });
+
+    // Pre-flight checks
+    qDebug() << "========== VA DIAGNOSTICS ==========";
+    qDebug() << "Program to run:" << programToRun;
+    qDebug() << "Program exists:" << QFileInfo(programToRun).exists();
+    qDebug() << "Program is executable:" << QFileInfo(programToRun).isExecutable();
+    qDebug() << "VA Root Path:" << vaRoot;
+    if (arguments.size() > 0) {
+        qDebug() << "First argument (vareq):" << arguments.at(0);
+        qDebug() << "First argument exists:" << QFileInfo(arguments.at(0)).exists();
+    }
+    qDebug() << "Full command line:" << programToRun << arguments;
+    qDebug() << "====================================";
     
     m_vaProcess->start();
+    if (!m_vaProcess->waitForStarted()) {
+        qCritical() << "Failed to start process!";
+        qCritical() << "Error:" << m_vaProcess->errorString();
+        m_vaProcess->deleteLater();
+        m_vaProcess = nullptr;
+        return;
+    }
+
     m_vaProcess->waitForFinished(-1);
-
 }
-
 }
