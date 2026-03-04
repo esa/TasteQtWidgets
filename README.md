@@ -1,6 +1,17 @@
-# TASTE Qt widgets
+# TASTE Requirement Engineering Widget
 
-This hosts a collection of Qt based widgets for the [TASTE](https://taste.tools) project by ESA.
+This repository contains a Requirement and Review Engineering widget implemented with Qt (C++) and including PySide6 bindings.
+
+It provides the following features:
+
+* Import and Export requirements in the ReqIf and Excel formats (templates provided)
+* Load requirements into a Gitlab repository using the Gilab API
+* Present lists of requirements to the end user as a Qt widget, allowing to edit, select, create new requirements and keep them in sync with the Gitlab server
+* Built-in AI Virtual Assistant to review requirements: detect ambiguities, duplicates, compliance to standards, etc.
+* Review widget allows to create and manage Issues in a Gitlab server.
+
+  
+The widget is integrated in the [TASTE](https://taste.tools) project by ESA (C++ IDE based on Qt Creator) as well as in [OpenGEODE](https://github.com/esa/opengeode). This allows to allocate requirements to model elements.
 
 ## C++
 
