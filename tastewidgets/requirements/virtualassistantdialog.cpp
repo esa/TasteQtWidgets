@@ -314,6 +314,7 @@ void OllamaWorker::stopOllama()
 void OllamaWorker::runOllama()
 {
     m_ollamaProcess = new QProcess();
+    restoreEnvironment();
     m_ollamaProcess->setProgram("ollama");
     m_ollamaProcess->setArguments(QStringList({"serve"}));
     m_ollamaProcess->start();
@@ -401,6 +402,7 @@ void VaWorker::writeConfigData()
 void VaWorker::runVa()
 {
     m_vaProcess = new QProcess();
+    restoreEnvironment();
 
     QStringList arguments;
 
@@ -432,6 +434,50 @@ void VaWorker::runVa()
     m_vaProcess->start();
     m_vaProcess->waitForFinished(-1);
 
+}
+
+void OllamaWorker::restoreEnvironment()
+{
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    const QString prefix("_ORIGINAL_SC_HOST_");
+    bool changed = false;
+    for (const QString &key : env.keys()) {
+        if (key.startsWith(prefix)) {
+            const QString &content = env.value(key);
+            const QString &originalKey = key.mid(prefix.length());
+            if (content.isEmpty()) {
+                env.remove(originalKey);
+            } else {
+                env.insert(originalKey, content);
+            }
+            changed = true;
+        }
+    }
+    if (changed) {
+        m_ollamaProcess->setProcessEnvironment(env);
+    }
+}
+
+void VaWorker::restoreEnvironment()
+{
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    const QString prefix("_ORIGINAL_SC_HOST_");
+    bool changed = false;
+    for (const QString &key : env.keys()) {
+        if (key.startsWith(prefix)) {
+            const QString &content = env.value(key);
+            const QString &originalKey = key.mid(prefix.length());
+            if (content.isEmpty()) {
+                env.remove(originalKey);
+            } else {
+                env.insert(originalKey, content);
+            }
+            changed = true;
+        }
+    }
+    if (changed) {
+        m_vaProcess->setProcessEnvironment(env);
+    }
 }
 
 }

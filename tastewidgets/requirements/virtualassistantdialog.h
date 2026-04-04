@@ -73,6 +73,7 @@ public Q_SLOTS:
     void runOllama();
 
 private:
+    void restoreEnvironment();
     QProcess *m_ollamaProcess;
 };
 
@@ -93,6 +94,7 @@ private:
     void initConfig();
     void readConfigData();
     void writeConfigData();
+    void restoreEnvironment();
 
     QString m_vaRootPath;
     QString m_configFilePath;
