@@ -69,28 +69,7 @@ bool IssuesManager::setCredentials(const QString &url, const QString &token)
 
 bool IssuesManager::setRequirementsCredentials(const QString &url, const QString &token)
 {
-    if (m_projectUrl == url && token == m_token) {
-        return true;
-    }
-
-    m_projectUrl = url;
-    m_token = token;
-
-    if (m_projectUrl.isEmpty() || m_token.isEmpty()) {
-        return false;
-    }
-
-    QUrl _url;
-    _url.setScheme("https");
-    _url.setHost(QUrl(url).host());
-    _url.setPath("/api/v4/");
-
-    switch (m_d->repoType) {
-
-    case (REPO_TYPE::GITLAB):
-        m_d->gitlabClient->setCredentials(_url.scheme() + "://" + _url.host(), token);
-    }
-    return requestProjectID(url);
+    return setCredentials(url, token);
 }
 /*!
  * URL of the project to load the requirements data from

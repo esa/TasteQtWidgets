@@ -51,6 +51,7 @@ SelectSourceDialog::SelectSourceDialog(QString title, QString label, QString url
     connect(ui->credentialWidget, &tracecommon::CredentialWidget::tokenChanged, this,
             &SelectSourceDialog::onChangeOfCredentials);
     connect(m_manager, &RequirementsManager::projectIDChanged, this, &SelectSourceDialog::updateServerStatus);
+    connect(m_manager, &RequirementsManager::busyChanged, this, &SelectSourceDialog::updateServerStatus);
     connect(m_manager, &RequirementsManager::connectionError, this, [this](const QString &error) {
         updateServerStatus();
         QMessageBox::warning(this, tr("Connection error"), tr("Connection failed for this error:\n%1").arg(error));
@@ -115,16 +116,22 @@ void SelectSourceDialog::updateServerStatus()
         qDebug() << "Update Server wait no manager";
         return;
     }
-qDebug() << "Update Server wait";
+
+    if (m_manager->isBusy()) {
+        ui->credentialWidget->setStatus(tr("Checking..."));
+        return;
+    }
+
+    qDebug() << "Update Server wait";
     m_wait = false;
 
     if (m_manager->hasValidProjectID()) {
-        ui->credentialWidget->setStatus("Url OK");
+        ui->credentialWidget->setStatus(tr("Url OK"));
         qDebug() << "Update Server Url";
         m_url = m_manager->projectUrl();
         m_token = m_manager->token();
     } else {
-        ui->credentialWidget->setStatus("Url Invalid");
+        ui->credentialWidget->setStatus(tr("Url Invalid"));
     }
 }
 
