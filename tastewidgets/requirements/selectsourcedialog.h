@@ -54,6 +54,9 @@ public:
     QString getUrl();
     QString getToken();
 
+    void setUrl(const QUrl &url);
+    void setToken(const QString &token);
+
     enum Selection
     {
         GitLabSelected,
@@ -62,6 +65,9 @@ public:
     };
 
     enum Selection result();
+
+Q_SIGNALS:
+    void requirementsUrlChanged(const QUrl &url);
 
 protected Q_SLOTS:
     void updateServerStatus();

@@ -40,12 +40,10 @@ SelectSourceDialog::SelectSourceDialog(QString title, QString label, QString url
     m_manager = new requirement::RequirementsManager(tracecommon::IssuesManager::REPO_TYPE::GITLAB, parent);
     m_manager->setRequirementsCredentials(url, token);
 
-#if 0
-    connect(reqManager, &tracecommon::IssuesManager::projectUrlChanged, ui->credentialWidget,
+    connect(m_manager, &tracecommon::IssuesManager::projectUrlChanged, ui->credentialWidget,
             &tracecommon::CredentialWidget::setUrl);
-    connect(reqManager, &tracecommon::IssuesManager::tokenChanged, ui->credentialWidget,
+    connect(m_manager, &tracecommon::IssuesManager::tokenChanged, ui->credentialWidget,
             &tracecommon::CredentialWidget::setToken);
-#endif
 
     connect(ui->credentialWidget, &tracecommon::CredentialWidget::urlChanged, this,
             &SelectSourceDialog::onChangeOfCredentials);
@@ -97,18 +95,29 @@ void SelectSourceDialog::onRadioButtonChanged()
 
 void SelectSourceDialog::onChangeOfCredentials()
 {
-    QString url(ui->credentialWidget->url().toString());
+    const QUrl url(ui->credentialWidget->url());
     QString token(ui->credentialWidget->token());
 
     qDebug() << "on Change " << url;
     qDebug() << "on Change Preoject ID " << m_manager->projectID();
 
-    if ((url.compare(m_manager->projectUrl()) != 0)
+    if ((url.toString().compare(m_manager->projectUrl()) != 0)
     || (token.compare(m_manager->token()) != 0))
     {
         m_wait = true;
-        m_manager->setRequirementsCredentials(url, token);
+        m_manager->setRequirementsCredentials(url.toString(), token);
+        Q_EMIT requirementsUrlChanged(url);
     }
+}
+
+void SelectSourceDialog::setUrl(const QUrl &url)
+{
+    ui->credentialWidget->setUrl(url);
+}
+
+void SelectSourceDialog::setToken(const QString &token)
+{
+    ui->credentialWidget->setToken(token);
 }
 
 void SelectSourceDialog::updateServerStatus()

@@ -144,6 +144,7 @@ private:
 
     volatile bool m_checkingServer;
     Ui::RequirementsWidget *ui;
+    QPointer<SelectSourceDialog> m_currentDialog;
     QList<QToolButton *> m_tagButtons;
     tracecommon::WidgetBar *m_widgetBar;
     QPointer<RequirementsManager> m_reqManager;

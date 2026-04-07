@@ -187,6 +187,9 @@ void RequirementsWidget::setUrl(const QUrl &url)
 {
     qDebug() << "Set Url";
     m_targetUrl = url.toString();
+    if (m_currentDialog) {
+        m_currentDialog->setUrl(url);
+    }
     onChangeOfCredentials(url.toString(), m_requirementsToken);
 }
 
@@ -199,6 +202,9 @@ void RequirementsWidget::setToken(const QString &token)
 {
     qDebug() << "Set Token";
     m_targetToken = token;
+    if (m_currentDialog) {
+        m_currentDialog->setToken(token);
+    }
     onChangeOfCredentials(m_requirementsUrl, token);
 }
 
@@ -465,9 +471,15 @@ void RequirementsWidget::showExportRequirementsDialog() const
     }
 
     QScopedPointer<SelectSourceDialog> dialog(new SelectSourceDialog(exportDialogTitle, exportDialogLabel, m_requirementsUrl, m_requirementsToken, m_model->getState()));
+    m_currentDialog = dialog.data();
+    connect(m_currentDialog, &SelectSourceDialog::requirementsUrlChanged, this, [this](const QUrl &url) {
+        Q_EMIT requirementsUrlChanged(url.toString());
+    });
     dialog->setModal(true);
 
     const auto ret = dialog->exec();
+
+    m_currentDialog = nullptr;
 
     if (ret == QDialog::Accepted) {
 //        m_model->setExportType(dialog->type());
@@ -628,9 +640,15 @@ void RequirementsWidget::showImportRequirementsDialog()
     }
 
     QScopedPointer<SelectSourceDialog> dialog(new SelectSourceDialog(importDialogTitle, importDialogLabel, m_requirementsUrl, m_requirementsToken, RequirementsModelBase::Both));
+    m_currentDialog = dialog.data();
+    connect(m_currentDialog, &SelectSourceDialog::requirementsUrlChanged, this, [this](const QUrl &url) {
+        Q_EMIT requirementsUrlChanged(url.toString());
+    });
     dialog->setModal(true);
 
     const auto ret = dialog->exec();
+
+    m_currentDialog = nullptr;
 
     if (ret == QDialog::Accepted) {
         switch(dialog->result())
