@@ -22,6 +22,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include "tagfilterproxymodel.h"
 #include "reqif.h"
 #include "excel.h"
+#include "selectsourcedialog.h"
 
 #include <QItemSelection>
 #include <QPointer>
