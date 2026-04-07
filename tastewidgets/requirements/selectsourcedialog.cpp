@@ -27,6 +27,7 @@ namespace requirement {
 SelectSourceDialog::SelectSourceDialog(QString title, QString label, QString url, QString token, enum RequirementsModelBase::modelType type, QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::SelectSourceDialog)
+    , m_wait(false)
     , m_url(url)
     , m_token(token)
     , m_type(type)
