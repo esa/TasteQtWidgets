@@ -114,7 +114,7 @@ protected Q_SLOTS:
     void showVirtualAssistantDialog();
     void showNewRequirementDialog();
     void showEditRequirementDialog(const QModelIndex &index);
-    void showExportRequirementsDialog()
+    void showExportRequirementsDialog();
     void showExportExcelFileRequirementsDialog(enum RequirementsModelBase::modelType type) const;
     void showExportReqIfFileRequirementsDialog(enum RequirementsModelBase::modelType type) const;
     void showImportRequirementsDialog();
