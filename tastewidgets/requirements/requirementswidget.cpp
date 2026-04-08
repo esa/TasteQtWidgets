@@ -464,7 +464,7 @@ bool RequirementsWidget::tagButtonExists(const QString &tag) const
             m_tagButtons.begin(), m_tagButtons.end(), [&tag](const auto *btn) { return btn->text() == tag; });
 }
 
-void RequirementsWidget::showExportRequirementsDialog() const
+void RequirementsWidget::showExportRequirementsDialog()
 {
     if (!m_reqManager || !m_model) {
         return;
