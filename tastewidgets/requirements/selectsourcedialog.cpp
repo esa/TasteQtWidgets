@@ -120,6 +120,7 @@ void SelectSourceDialog::setToken(const QString &token)
     ui->credentialWidget->setToken(token);
 }
 
+
 void SelectSourceDialog::updateServerStatus()
 {
     if (!m_manager) {
@@ -127,23 +128,29 @@ void SelectSourceDialog::updateServerStatus()
         return;
     }
 
-    if (m_manager->isBusy()) {
-        ui->credentialWidget->setStatus(tr("Checking..."));
-        return;
-    }
-
-    qDebug() << "Update Server wait";
+    qDebug() << "Update Server Status Check";
     m_wait = false;
 
+    // DEBUG: Log the current state
+    qDebug() << "  Manager URL:" << m_manager->projectUrl();
+    qDebug() << "  Manager Token:" << (m_manager->token().isEmpty() ? "EMPTY" : "SET");
+    qDebug() << "  Project ID:" << m_manager->projectID();
+    qDebug() << "  Is Busy:" << m_manager->isBusy();
+    qDebug() << "  Has Valid Project ID:" << m_manager->hasValidProjectID();
+
     if (m_manager->hasValidProjectID()) {
-        ui->credentialWidget->setStatus(tr("Url OK"));
-        qDebug() << "Update Server Url";
+        ui->credentialWidget->setStatus("Url OK");
+        qDebug() << "Update Server Url - Status set to OK";
         m_url = m_manager->projectUrl();
         m_token = m_manager->token();
     } else {
-        ui->credentialWidget->setStatus(tr("Url Invalid"));
+        ui->credentialWidget->setStatus("Url Invalid");
+        qDebug() << "Update Server Url - Status set to INVALID"
+                 << "\n  Reason: projectID =" << m_manager->projectID()
+                 << "(needs to be >= 0)";
     }
 }
+
 
 void SelectSourceDialog::accept()
 {
