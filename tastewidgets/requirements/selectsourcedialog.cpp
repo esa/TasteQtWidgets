@@ -98,15 +98,18 @@ void SelectSourceDialog::onChangeOfCredentials()
     const QUrl url(ui->credentialWidget->url());
     QString token(ui->credentialWidget->token());
 
-    qDebug() << "on Change " << url;
-    qDebug() << "on Change Preoject ID " << m_manager->projectID();
+    qDebug() << "SelectSourceDialog::onChangeOfCredentials - URL:" << url.toString() << "Token length:" << token.length();
+    qDebug() << "SelectSourceDialog::onChangeOfCredentials - Current Manager Project ID:" << m_manager->projectID();
 
     if ((url.toString().compare(m_manager->projectUrl()) != 0)
     || (token.compare(m_manager->token()) != 0))
     {
+        qDebug() << "SelectSourceDialog::onChangeOfCredentials - Credentials changed, updating manager and notifying parent";
         m_wait = true;
         m_manager->setRequirementsCredentials(url.toString(), token);
         Q_EMIT requirementsUrlChanged(url);
+    } else {
+        qDebug() << "SelectSourceDialog::onChangeOfCredentials - Credentials unchanged";
     }
 }
 

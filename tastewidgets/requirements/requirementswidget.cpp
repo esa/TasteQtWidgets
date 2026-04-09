@@ -185,9 +185,10 @@ QUrl RequirementsWidget::url() const
 
 void RequirementsWidget::setUrl(const QUrl &url)
 {
-    qDebug() << "Set Url";
+    qDebug() << "RequirementsWidget::setUrl - URL:" << url.toString();
     m_targetUrl = url.toString();
     if (m_currentDialog) {
+        qDebug() << "RequirementsWidget::setUrl - Updating current dialog URL";
         m_currentDialog->setUrl(url);
     }
     onChangeOfCredentials(url.toString(), m_requirementsToken);
@@ -200,9 +201,10 @@ QString RequirementsWidget::token() const
 
 void RequirementsWidget::setToken(const QString &token)
 {
-    qDebug() << "Set Token";
+    qDebug() << "RequirementsWidget::setToken - Token length:" << token.length();
     m_targetToken = token;
     if (m_currentDialog) {
+        qDebug() << "RequirementsWidget::setToken - Updating current dialog token";
         m_currentDialog->setToken(token);
     }
     onChangeOfCredentials(m_requirementsUrl, token);
@@ -473,7 +475,10 @@ void RequirementsWidget::showExportRequirementsDialog()
     QScopedPointer<SelectSourceDialog> dialog(new SelectSourceDialog(exportDialogTitle, exportDialogLabel, m_requirementsUrl, m_requirementsToken, m_model->getState()));
     m_currentDialog = dialog.data();
     connect(m_currentDialog, &SelectSourceDialog::requirementsUrlChanged, this, [this](const QUrl &url) {
+        qDebug() << "RequirementsWidget: URL changed in dialog to:" << url.toString();
         Q_EMIT requirementsUrlChanged(url.toString());
+        // Trigger credentials changed so SCRequirementsWidget can load from .netrc
+        Q_EMIT requirementsCredentialsChanged(url, m_requirementsToken);
     });
     dialog->setModal(true);
 
@@ -642,7 +647,10 @@ void RequirementsWidget::showImportRequirementsDialog()
     QScopedPointer<SelectSourceDialog> dialog(new SelectSourceDialog(importDialogTitle, importDialogLabel, m_requirementsUrl, m_requirementsToken, RequirementsModelBase::Both));
     m_currentDialog = dialog.data();
     connect(m_currentDialog, &SelectSourceDialog::requirementsUrlChanged, this, [this](const QUrl &url) {
+        qDebug() << "RequirementsWidget: URL changed in dialog to:" << url.toString();
         Q_EMIT requirementsUrlChanged(url.toString());
+        // Trigger credentials changed so SCRequirementsWidget can load from .netrc
+        Q_EMIT requirementsCredentialsChanged(url, m_requirementsToken);
     });
     dialog->setModal(true);
 

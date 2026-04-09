@@ -39,18 +39,22 @@ IssuesManager::IssuesManager(QObject *parent)
  */
 bool IssuesManager::setCredentials(const QString &url, const QString &token)
 {
+    qDebug() << "IssuesManager::setCredentials - URL:" << url << "Token length:" << token.length();
     if (m_projectUrl == url && token == m_token) {
+        qDebug() << "IssuesManager::setCredentials - Credentials unchanged, skipping update";
         return true;
     }
 
     m_projectUrl = url;
     m_token = token;
+    // Reset project ID before starting a new request to ensure "Url Invalid" status is correctly handled
     setProjectID(-1);
 
     Q_EMIT projectUrlChanged(m_projectUrl);
     Q_EMIT tokenChanged(m_token);
 
     if (m_projectUrl.isEmpty() || m_token.isEmpty()) {
+        qDebug() << "IssuesManager::setCredentials - Missing URL or token, returning false";
         return false;
     }
 
@@ -62,6 +66,7 @@ bool IssuesManager::setCredentials(const QString &url, const QString &token)
     switch (m_d->repoType) {
 
     case (REPO_TYPE::GITLAB):
+        qDebug() << "IssuesManager::setCredentials - Setting GitLab client credentials for:" << _url.scheme() + "://" + _url.host();
         m_d->gitlabClient->setCredentials(_url.scheme() + "://" + _url.host(), token);
     }
     return requestProjectID(url);
@@ -69,6 +74,7 @@ bool IssuesManager::setCredentials(const QString &url, const QString &token)
 
 bool IssuesManager::setRequirementsCredentials(const QString &url, const QString &token)
 {
+    qDebug() << "IssuesManager::setRequirementsCredentials called for URL:" << url;
     return setCredentials(url, token);
 }
 /*!
@@ -143,6 +149,7 @@ void IssuesManager::setProjectID(const int &newProjectID)
 {
 // Always emit projectIDChanged because multiple invalid projects will all have projectID -1
 // So you cannot test multiple incorrect Urls if you don't get multiple projectIDChanged messages
+    qDebug() << "IssuesManager::setProjectID - New ID:" << newProjectID;
 
     m_projectID = newProjectID;
     Q_EMIT projectIDChanged();
@@ -170,9 +177,13 @@ void IssuesManager::init(IssuesManagerPrivate *priv)
 
 bool IssuesManager::requestProjectID(const QUrl &url)
 {
+    qDebug() << "IssuesManager::requestProjectID - URL:" << url.toString();
     switch (m_d->repoType) {
     case (REPO_TYPE::GITLAB): {
         const bool wasBusy = m_d->gitlabClient->requestProjectId(url);
+        if (wasBusy) {
+            qDebug() << "IssuesManager::requestProjectID - GitLab client is busy, skipping request";
+        }
         return !wasBusy;
     }
     default:
