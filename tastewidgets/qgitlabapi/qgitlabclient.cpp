@@ -176,13 +176,23 @@ bool QGitlabClient::requestListofLabels(const LabelsRequestOptions &options)
 
 bool QGitlabClient::requestProjectId(const QUrl &projectUrl)
 {
+    qDebug() << "QGitlabClient::requestProjectId - URL:" << projectUrl.toString();
     if (isBusy()) {
+        qDebug() << "QGitlabClient::requestProjectId - Busy, skipping";
         return true;
     }
     setBusy(true);
-    auto projectName = QDir(QUrl(projectUrl).path()).dirName();
+    
+    QString path = projectUrl.path();
+    if (path.endsWith("/")) {
+        path.chop(1);
+    }
+    const QString projectName = path.split('/').last();
+    qDebug() << "QGitlabClient::requestProjectId - Project Name extracted:" << projectName;
+
     auto reply = sendRequest(QGitlabClient::GET, mUrlComposer.composeProjectUrl(projectName));
     connect(reply, &QNetworkReply::finished, [reply, projectUrl, this]() {
+        qDebug() << "QGitlabClient::requestProjectId - Request finished";
         setBusy(false);
         int projectID = -1;
         if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200) {
@@ -210,7 +220,12 @@ bool QGitlabClient::requestProjectId(const QUrl &projectUrl)
                         if (itemWebUrl.endsWith("/")) {
                             itemWebUrl.chop(1);
                         }
-                        if (objOk && itemWebUrl == projectUrlStr) {
+                        
+                        // We check both the full URL match and just the path match to be robust
+                        const bool urlMatch = (objOk && itemWebUrl == projectUrlStr);
+                        
+                        if (urlMatch) {
+                            qDebug() << "QGitlabClient::requestProjectId - Found project ID:" << itemObj.value("id").toInteger();
                             projectID = itemObj.value("id").toInteger();
                             break;
                         }

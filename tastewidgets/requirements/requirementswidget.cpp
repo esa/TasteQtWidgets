@@ -305,41 +305,43 @@ void RequirementsWidget::workingCompleted()
 
 void RequirementsWidget::setLoginData()
 {
+    qDebug() << "RequirementsWidget::setLoginData called";
     bool before = false;
 
     if (!m_reqManager) {
+         qDebug() << "RequirementsWidget::setLoginData - No manager";
          return;
     }
 
     while (m_reqManager->isBusy()) {
+        qDebug() << "RequirementsWidget::setLoginData - Manager is busy, processing events";
         QApplication::processEvents();
     }
 
     if (m_requirementsUrl.isEmpty() || m_requirementsToken.isEmpty()) {
-        qDebug() << "login empty";
+        qDebug() << "RequirementsWidget::setLoginData - Login empty (URL or token)";
         return;
     }
 
     m_model->clearRequirements();
 
     if (m_requirementsUrl == m_reqManager->projectUrl() && m_requirementsToken == m_reqManager->token()) {
-  
+        qDebug() << "RequirementsWidget::setLoginData - Credentials match manager, requesting requirements";
         m_reqManager->requestAllRequirements("");
         ui->sourceLineEdit->setText(m_requirementsUrl);
         ui->applyPushButton->setEnabled(true);
-        qDebug() << "login matches";
         return;
     }
 
+    qDebug() << "RequirementsWidget::setLoginData - Credentials don't match manager, updating credentials";
     ui->sourceLineEdit->setText("");
     ui->applyPushButton->setEnabled(false);
-    qDebug() << "login doesn't match";
     m_reqManager->setRequirementsCredentials(m_requirementsUrl, m_requirementsToken);
 }
 
 void RequirementsWidget::updateServerStatus()
 {
-    qDebug() << "Widget Checking server ";
+    qDebug() << "RequirementsWidget::updateServerStatus called";
     if (!m_reqManager) {
         return;
     }
@@ -357,8 +359,14 @@ void RequirementsWidget::updateServerStatus()
         }
     }
 
-    if(m_first) {
+    if (m_reqManager->hasValidProjectID()) {
+        qDebug() << "RequirementsWidget::updateServerStatus - Valid project ID found, refreshing data";
         setLoginData();
+    } else {
+        qDebug() << "RequirementsWidget::updateServerStatus - Project ID is still invalid";
+    }
+
+    if(m_first) {
         m_first = false;
     }
 }

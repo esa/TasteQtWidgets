@@ -45,7 +45,7 @@ bool IssuesManager::setCredentials(const QString &url, const QString &token)
         return true;
     }
 
-    m_projectUrl = url;
+    m_projectUrl = QUrl(url);
     m_token = token;
     // Reset project ID before starting a new request to ensure "Url Invalid" status is correctly handled
     setProjectID(-1);
@@ -58,18 +58,23 @@ bool IssuesManager::setCredentials(const QString &url, const QString &token)
         return false;
     }
 
-    QUrl _url;
-    _url.setScheme("https");
-    _url.setHost(QUrl(url).host());
-    _url.setPath("/api/v4/");
+    // Construct the API base URL from the project URL
+    QUrl apiUrl;
+    apiUrl.setScheme(m_projectUrl.scheme().isEmpty() ? "https" : m_projectUrl.scheme());
+    apiUrl.setHost(m_projectUrl.host());
+    apiUrl.setPort(m_projectUrl.port());
+    apiUrl.setPath("/api/v4/");
+
+    qDebug() << "IssuesManager::setCredentials - Project URL:" << m_projectUrl.toString();
+    qDebug() << "IssuesManager::setCredentials - API Base URL:" << apiUrl.toString();
 
     switch (m_d->repoType) {
 
     case (REPO_TYPE::GITLAB):
-        qDebug() << "IssuesManager::setCredentials - Setting GitLab client credentials for:" << _url.scheme() + "://" + _url.host();
-        m_d->gitlabClient->setCredentials(_url.scheme() + "://" + _url.host(), token);
+        qDebug() << "IssuesManager::setCredentials - Setting GitLab client credentials for:" << apiUrl.scheme() + "://" + apiUrl.host();
+        m_d->gitlabClient->setCredentials(apiUrl.scheme() + "://" + apiUrl.host(), token);
     }
-    return requestProjectID(url);
+    return requestProjectID(m_projectUrl);
 }
 
 bool IssuesManager::setRequirementsCredentials(const QString &url, const QString &token)
