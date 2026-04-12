@@ -80,8 +80,12 @@ RequirementsManager::~RequirementsManager() { }
  */
 bool RequirementsManager::requestAllRequirements(QString typeLabel)
 {
+    qDebug() << "RequirementsManager::requestAllRequirements called for Project ID:" << m_projectID;
+    if (!hasValidProjectID()) {
+        qDebug() << "RequirementsManager::requestAllRequirements - Invalid project ID, skipping";
+        return false;
+    }
     QStringList labels;
-qDebug() << "RequirementsManager::requestAllRequirements";
     labels << k_requirementsTypeLabel;
 
     if (!typeLabel.isEmpty()) {

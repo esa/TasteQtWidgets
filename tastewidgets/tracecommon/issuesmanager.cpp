@@ -40,7 +40,18 @@ IssuesManager::IssuesManager(QObject *parent)
 bool IssuesManager::setCredentials(const QString &url, const QString &token)
 {
     qDebug() << "IssuesManager::setCredentials - URL:" << url << "Token length:" << token.length();
-    if (m_projectUrl == url && token == m_token) {
+    
+    if (url.isEmpty()) {
+        qDebug() << "IssuesManager::setCredentials - Empty URL, ignoring update to preserve current project ID";
+        return false;
+    }
+
+    if (isBusy()) {
+        qDebug() << "IssuesManager::setCredentials - Manager is busy, skipping credential update to avoid interrupting active request";
+        return false;
+    }
+
+    if (m_projectUrl.toString() == url && token == m_token) {
         qDebug() << "IssuesManager::setCredentials - Credentials unchanged, skipping update";
         return true;
     }
@@ -128,6 +139,11 @@ bool IssuesManager::hasValidProjectID() const
 
 bool IssuesManager::requestTags()
 {
+    qDebug() << "IssuesManager::requestTags called for Project ID:" << m_projectID;
+    if (!hasValidProjectID()) {
+        qDebug() << "IssuesManager::requestTags - Invalid project ID, skipping";
+        return false;
+    }
     switch (m_d->repoType) {
     case (REPO_TYPE::GITLAB): {
         gitlab::LabelsRequestOptions options;
