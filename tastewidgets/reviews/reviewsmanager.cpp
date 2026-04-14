@@ -64,6 +64,11 @@ ReviewsManager::~ReviewsManager() { }
 
 bool ReviewsManager::requestAllReviews()
 {
+    qDebug() << "ReviewsManager::requestAllReviews called for Project ID:" << m_projectID;
+    if (!hasValidProjectID()) {
+        qDebug() << "ReviewsManager::requestAllReviews - Invalid project ID, skipping";
+        return false;
+    }
     switch (d->repoType) {
     case (REPO_TYPE::GITLAB): {
         gitlab::IssueRequestOptions options;

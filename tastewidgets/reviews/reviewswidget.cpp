@@ -204,13 +204,19 @@ void ReviewsWidget::updateServerStatus()
 
 void ReviewsWidget::updateProjectReady()
 {
+    qDebug() << "ReviewsWidget::updateProjectReady called";
     if (!m_reviewsManager) {
+        qDebug() << "ReviewsWidget::updateProjectReady - No manager";
         ui->createReviewButton->setEnabled(false);
         return;
     }
 
-    ui->createReviewButton->setEnabled(m_reviewsManager->hasValidProjectID());
-    requestReviews();
+    const bool hasValidID = m_reviewsManager->hasValidProjectID();
+    qDebug() << "ReviewsWidget::updateProjectReady - Valid project ID:" << hasValidID;
+    ui->createReviewButton->setEnabled(hasValidID);
+    if (hasValidID) {
+        requestReviews();
+    }
 }
 
 void ReviewsWidget::addReviews(const QList<Review> &reviews)
@@ -233,8 +239,12 @@ void ReviewsWidget::onChangeOfCredentials()
 
 void ReviewsWidget::requestReviews()
 {
+    qDebug() << "ReviewsWidget::requestReviews called";
     if (m_reviewsManager && m_reviewsManager->hasValidProjectID()) {
+        qDebug() << "ReviewsWidget::requestReviews - Valid manager and project ID, requesting reviews";
         m_reviewsManager->requestAllReviews();
+    } else {
+        qDebug() << "ReviewsWidget::requestReviews - Missing manager or project ID is invalid";
     }
 }
 

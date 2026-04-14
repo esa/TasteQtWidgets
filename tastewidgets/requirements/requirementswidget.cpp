@@ -185,8 +185,12 @@ QUrl RequirementsWidget::url() const
 
 void RequirementsWidget::setUrl(const QUrl &url)
 {
-    qDebug() << "Set Url";
+    qDebug() << "RequirementsWidget::setUrl - URL:" << url.toString();
     m_targetUrl = url.toString();
+    if (m_currentDialog) {
+        qDebug() << "RequirementsWidget::setUrl - Updating current dialog URL";
+        m_currentDialog->setUrl(url);
+    }
     onChangeOfCredentials(url.toString(), m_requirementsToken);
 }
 
@@ -197,8 +201,12 @@ QString RequirementsWidget::token() const
 
 void RequirementsWidget::setToken(const QString &token)
 {
-    qDebug() << "Set Token";
+    qDebug() << "RequirementsWidget::setToken - Token length:" << token.length();
     m_targetToken = token;
+    if (m_currentDialog) {
+        qDebug() << "RequirementsWidget::setToken - Updating current dialog token";
+        m_currentDialog->setToken(token);
+    }
     onChangeOfCredentials(m_requirementsUrl, token);
 }
 
@@ -297,41 +305,43 @@ void RequirementsWidget::workingCompleted()
 
 void RequirementsWidget::setLoginData()
 {
+    qDebug() << "RequirementsWidget::setLoginData called";
     bool before = false;
 
     if (!m_reqManager) {
+         qDebug() << "RequirementsWidget::setLoginData - No manager";
          return;
     }
 
     while (m_reqManager->isBusy()) {
+        qDebug() << "RequirementsWidget::setLoginData - Manager is busy, processing events";
         QApplication::processEvents();
     }
 
     if (m_requirementsUrl.isEmpty() || m_requirementsToken.isEmpty()) {
-        qDebug() << "login empty";
+        qDebug() << "RequirementsWidget::setLoginData - Login empty (URL or token)";
         return;
     }
 
     m_model->clearRequirements();
 
     if (m_requirementsUrl == m_reqManager->projectUrl() && m_requirementsToken == m_reqManager->token()) {
-  
+        qDebug() << "RequirementsWidget::setLoginData - Credentials match manager, requesting requirements";
         m_reqManager->requestAllRequirements("");
         ui->sourceLineEdit->setText(m_requirementsUrl);
         ui->applyPushButton->setEnabled(true);
-        qDebug() << "login matches";
         return;
     }
 
+    qDebug() << "RequirementsWidget::setLoginData - Credentials don't match manager, updating credentials";
     ui->sourceLineEdit->setText("");
     ui->applyPushButton->setEnabled(false);
-    qDebug() << "login doesn't match";
     m_reqManager->setRequirementsCredentials(m_requirementsUrl, m_requirementsToken);
 }
 
 void RequirementsWidget::updateServerStatus()
 {
-    qDebug() << "Widget Checking server ";
+    qDebug() << "RequirementsWidget::updateServerStatus called";
     if (!m_reqManager) {
         return;
     }
@@ -349,8 +359,14 @@ void RequirementsWidget::updateServerStatus()
         }
     }
 
-    if(m_first) {
+    if (m_reqManager->hasValidProjectID()) {
+        qDebug() << "RequirementsWidget::updateServerStatus - Valid project ID found, refreshing data";
         setLoginData();
+    } else {
+        qDebug() << "RequirementsWidget::updateServerStatus - Project ID is still invalid";
+    }
+
+    if(m_first) {
         m_first = false;
     }
 }
@@ -458,16 +474,25 @@ bool RequirementsWidget::tagButtonExists(const QString &tag) const
             m_tagButtons.begin(), m_tagButtons.end(), [&tag](const auto *btn) { return btn->text() == tag; });
 }
 
-void RequirementsWidget::showExportRequirementsDialog() const
+void RequirementsWidget::showExportRequirementsDialog()
 {
     if (!m_reqManager || !m_model) {
         return;
     }
 
     QScopedPointer<SelectSourceDialog> dialog(new SelectSourceDialog(exportDialogTitle, exportDialogLabel, m_requirementsUrl, m_requirementsToken, m_model->getState()));
+    m_currentDialog = dialog.data();
+    connect(m_currentDialog, &SelectSourceDialog::requirementsUrlChanged, this, [this](const QUrl &url) {
+        qDebug() << "RequirementsWidget: URL changed in dialog to:" << url.toString();
+        Q_EMIT requirementsUrlChanged(url.toString());
+        // Trigger credentials changed so SCRequirementsWidget can load from .netrc
+        Q_EMIT requirementsCredentialsChanged(url, m_requirementsToken);
+    });
     dialog->setModal(true);
 
     const auto ret = dialog->exec();
+
+    m_currentDialog = nullptr;
 
     if (ret == QDialog::Accepted) {
 //        m_model->setExportType(dialog->type());
@@ -628,9 +653,18 @@ void RequirementsWidget::showImportRequirementsDialog()
     }
 
     QScopedPointer<SelectSourceDialog> dialog(new SelectSourceDialog(importDialogTitle, importDialogLabel, m_requirementsUrl, m_requirementsToken, RequirementsModelBase::Both));
+    m_currentDialog = dialog.data();
+    connect(m_currentDialog, &SelectSourceDialog::requirementsUrlChanged, this, [this](const QUrl &url) {
+        qDebug() << "RequirementsWidget: URL changed in dialog to:" << url.toString();
+        Q_EMIT requirementsUrlChanged(url.toString());
+        // Trigger credentials changed so SCRequirementsWidget can load from .netrc
+        Q_EMIT requirementsCredentialsChanged(url, m_requirementsToken);
+    });
     dialog->setModal(true);
 
     const auto ret = dialog->exec();
+
+    m_currentDialog = nullptr;
 
     if (ret == QDialog::Accepted) {
         switch(dialog->result())

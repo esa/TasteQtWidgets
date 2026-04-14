@@ -22,6 +22,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include "tagfilterproxymodel.h"
 #include "reqif.h"
 #include "excel.h"
+#include "selectsourcedialog.h"
 
 #include <QItemSelection>
 #include <QPointer>
@@ -113,7 +114,7 @@ protected Q_SLOTS:
     void showVirtualAssistantDialog();
     void showNewRequirementDialog();
     void showEditRequirementDialog(const QModelIndex &index);
-    void showExportRequirementsDialog() const;
+    void showExportRequirementsDialog();
     void showExportExcelFileRequirementsDialog(enum RequirementsModelBase::modelType type) const;
     void showExportReqIfFileRequirementsDialog(enum RequirementsModelBase::modelType type) const;
     void showImportRequirementsDialog();
@@ -144,6 +145,7 @@ private:
 
     volatile bool m_checkingServer;
     Ui::RequirementsWidget *ui;
+    QPointer<SelectSourceDialog> m_currentDialog;
     QList<QToolButton *> m_tagButtons;
     tracecommon::WidgetBar *m_widgetBar;
     QPointer<RequirementsManager> m_reqManager;

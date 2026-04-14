@@ -89,7 +89,17 @@ QString CredentialWidget::token() const
 
 void CredentialWidget::updateTockenButton()
 {
-    ui->createTokenButton->setEnabled(url().isValid());
+    QUrl urlObj = url();
+    bool isValid = urlObj.isValid();
+    
+    qDebug() << "CredentialWidget::updateTockenButton";
+    qDebug() << "  URL string:" << ui->urlLineEdit->text();
+    qDebug() << "  URL parsed:" << urlObj.toString();
+    qDebug() << "  URL host:" << urlObj.host();
+    qDebug() << "  URL scheme:" << urlObj.scheme();
+    qDebug() << "  URL isValid():" << isValid;
+    
+    ui->createTokenButton->setEnabled(isValid);
 }
 
 void CredentialWidget::openTokenSettingsPage()

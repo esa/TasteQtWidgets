@@ -27,6 +27,7 @@ namespace requirement {
 SelectSourceDialog::SelectSourceDialog(QString title, QString label, QString url, QString token, enum RequirementsModelBase::modelType type, QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::SelectSourceDialog)
+    , m_wait(false)
     , m_url(url)
     , m_token(token)
     , m_type(type)
@@ -39,18 +40,17 @@ SelectSourceDialog::SelectSourceDialog(QString title, QString label, QString url
     m_manager = new requirement::RequirementsManager(tracecommon::IssuesManager::REPO_TYPE::GITLAB, parent);
     m_manager->setRequirementsCredentials(url, token);
 
-#if 0
-    connect(reqManager, &tracecommon::IssuesManager::projectUrlChanged, ui->credentialWidget,
+    connect(m_manager, &tracecommon::IssuesManager::projectUrlChanged, ui->credentialWidget,
             &tracecommon::CredentialWidget::setUrl);
-    connect(reqManager, &tracecommon::IssuesManager::tokenChanged, ui->credentialWidget,
+    connect(m_manager, &tracecommon::IssuesManager::tokenChanged, ui->credentialWidget,
             &tracecommon::CredentialWidget::setToken);
-#endif
 
     connect(ui->credentialWidget, &tracecommon::CredentialWidget::urlChanged, this,
             &SelectSourceDialog::onChangeOfCredentials);
     connect(ui->credentialWidget, &tracecommon::CredentialWidget::tokenChanged, this,
             &SelectSourceDialog::onChangeOfCredentials);
     connect(m_manager, &RequirementsManager::projectIDChanged, this, &SelectSourceDialog::updateServerStatus);
+    connect(m_manager, &RequirementsManager::busyChanged, this, &SelectSourceDialog::updateServerStatus);
     connect(m_manager, &RequirementsManager::connectionError, this, [this](const QString &error) {
         updateServerStatus();
         QMessageBox::warning(this, tr("Connection error"), tr("Connection failed for this error:\n%1").arg(error));
@@ -95,19 +95,34 @@ void SelectSourceDialog::onRadioButtonChanged()
 
 void SelectSourceDialog::onChangeOfCredentials()
 {
-    QString url(ui->credentialWidget->url().toString());
+    const QUrl url(ui->credentialWidget->url());
     QString token(ui->credentialWidget->token());
 
-    qDebug() << "on Change " << url;
-    qDebug() << "on Change Preoject ID " << m_manager->projectID();
+    qDebug() << "SelectSourceDialog::onChangeOfCredentials - URL:" << url.toString() << "Token length:" << token.length();
+    qDebug() << "SelectSourceDialog::onChangeOfCredentials - Current Manager Project ID:" << m_manager->projectID();
 
-    if ((url.compare(m_manager->projectUrl()) != 0)
+    if ((url.toString().compare(m_manager->projectUrl()) != 0)
     || (token.compare(m_manager->token()) != 0))
     {
+        qDebug() << "SelectSourceDialog::onChangeOfCredentials - Credentials changed, updating manager and notifying parent";
         m_wait = true;
-        m_manager->setRequirementsCredentials(url, token);
+        m_manager->setRequirementsCredentials(url.toString(), token);
+        Q_EMIT requirementsUrlChanged(url);
+    } else {
+        qDebug() << "SelectSourceDialog::onChangeOfCredentials - Credentials unchanged";
     }
 }
+
+void SelectSourceDialog::setUrl(const QUrl &url)
+{
+    ui->credentialWidget->setUrl(url);
+}
+
+void SelectSourceDialog::setToken(const QString &token)
+{
+    ui->credentialWidget->setToken(token);
+}
+
 
 void SelectSourceDialog::updateServerStatus()
 {
@@ -115,18 +130,30 @@ void SelectSourceDialog::updateServerStatus()
         qDebug() << "Update Server wait no manager";
         return;
     }
-qDebug() << "Update Server wait";
+
+    qDebug() << "Update Server Status Check";
     m_wait = false;
+
+    // DEBUG: Log the current state
+    qDebug() << "  Manager URL:" << m_manager->projectUrl();
+    qDebug() << "  Manager Token:" << (m_manager->token().isEmpty() ? "EMPTY" : "SET");
+    qDebug() << "  Project ID:" << m_manager->projectID();
+    qDebug() << "  Is Busy:" << m_manager->isBusy();
+    qDebug() << "  Has Valid Project ID:" << m_manager->hasValidProjectID();
 
     if (m_manager->hasValidProjectID()) {
         ui->credentialWidget->setStatus("Url OK");
-        qDebug() << "Update Server Url";
+        qDebug() << "Update Server Url - Status set to OK";
         m_url = m_manager->projectUrl();
         m_token = m_manager->token();
     } else {
         ui->credentialWidget->setStatus("Url Invalid");
+        qDebug() << "Update Server Url - Status set to INVALID"
+                 << "\n  Reason: projectID =" << m_manager->projectID()
+                 << "(needs to be >= 0)";
     }
 }
+
 
 void SelectSourceDialog::accept()
 {

@@ -39,58 +39,59 @@ IssuesManager::IssuesManager(QObject *parent)
  */
 bool IssuesManager::setCredentials(const QString &url, const QString &token)
 {
-    if (m_projectUrl == url && token == m_token) {
+    qDebug() << "IssuesManager::setCredentials - URL:" << url << "Token length:" << token.length();
+    
+    if (url.isEmpty()) {
+        qDebug() << "IssuesManager::setCredentials - Empty URL, ignoring update to preserve current project ID";
+        return false;
+    }
+
+    if (isBusy()) {
+        qDebug() << "IssuesManager::setCredentials - Manager is busy, skipping credential update to avoid interrupting active request";
+        return false;
+    }
+
+    if (m_projectUrl.toString() == url && token == m_token) {
+        qDebug() << "IssuesManager::setCredentials - Credentials unchanged, skipping update";
         return true;
     }
 
-    m_projectUrl = url;
+    m_projectUrl = QUrl(url);
     m_token = token;
+    // Reset project ID before starting a new request to ensure "Url Invalid" status is correctly handled
     setProjectID(-1);
 
     Q_EMIT projectUrlChanged(m_projectUrl);
     Q_EMIT tokenChanged(m_token);
 
     if (m_projectUrl.isEmpty() || m_token.isEmpty()) {
+        qDebug() << "IssuesManager::setCredentials - Missing URL or token, returning false";
         return false;
     }
 
-    QUrl _url;
-    _url.setScheme("https");
-    _url.setHost(QUrl(url).host());
-    _url.setPath("/api/v4/");
+    // Construct the API base URL from the project URL
+    QUrl apiUrl;
+    apiUrl.setScheme(m_projectUrl.scheme().isEmpty() ? "https" : m_projectUrl.scheme());
+    apiUrl.setHost(m_projectUrl.host());
+    apiUrl.setPort(m_projectUrl.port());
+    apiUrl.setPath("/api/v4/");
+
+    qDebug() << "IssuesManager::setCredentials - Project URL:" << m_projectUrl.toString();
+    qDebug() << "IssuesManager::setCredentials - API Base URL:" << apiUrl.toString();
 
     switch (m_d->repoType) {
 
     case (REPO_TYPE::GITLAB):
-        m_d->gitlabClient->setCredentials(_url.scheme() + "://" + _url.host(), token);
+        qDebug() << "IssuesManager::setCredentials - Setting GitLab client credentials for:" << apiUrl.scheme() + "://" + apiUrl.host();
+        m_d->gitlabClient->setCredentials(apiUrl.scheme() + "://" + apiUrl.host(), token);
     }
-    return requestProjectID(url);
+    return requestProjectID(m_projectUrl);
 }
 
 bool IssuesManager::setRequirementsCredentials(const QString &url, const QString &token)
 {
-    if (m_projectUrl == url && token == m_token) {
-        return true;
-    }
-
-    m_projectUrl = url;
-    m_token = token;
-
-    if (m_projectUrl.isEmpty() || m_token.isEmpty()) {
-        return false;
-    }
-
-    QUrl _url;
-    _url.setScheme("https");
-    _url.setHost(QUrl(url).host());
-    _url.setPath("/api/v4/");
-
-    switch (m_d->repoType) {
-
-    case (REPO_TYPE::GITLAB):
-        m_d->gitlabClient->setCredentials(_url.scheme() + "://" + _url.host(), token);
-    }
-    return requestProjectID(url);
+    qDebug() << "IssuesManager::setRequirementsCredentials called for URL:" << url;
+    return setCredentials(url, token);
 }
 /*!
  * URL of the project to load the requirements data from
@@ -138,6 +139,11 @@ bool IssuesManager::hasValidProjectID() const
 
 bool IssuesManager::requestTags()
 {
+    qDebug() << "IssuesManager::requestTags called for Project ID:" << m_projectID;
+    if (!hasValidProjectID()) {
+        qDebug() << "IssuesManager::requestTags - Invalid project ID, skipping";
+        return false;
+    }
     switch (m_d->repoType) {
     case (REPO_TYPE::GITLAB): {
         gitlab::LabelsRequestOptions options;
@@ -164,6 +170,7 @@ void IssuesManager::setProjectID(const int &newProjectID)
 {
 // Always emit projectIDChanged because multiple invalid projects will all have projectID -1
 // So you cannot test multiple incorrect Urls if you don't get multiple projectIDChanged messages
+    qDebug() << "IssuesManager::setProjectID - New ID:" << newProjectID;
 
     m_projectID = newProjectID;
     Q_EMIT projectIDChanged();
@@ -191,9 +198,13 @@ void IssuesManager::init(IssuesManagerPrivate *priv)
 
 bool IssuesManager::requestProjectID(const QUrl &url)
 {
+    qDebug() << "IssuesManager::requestProjectID - URL:" << url.toString();
     switch (m_d->repoType) {
     case (REPO_TYPE::GITLAB): {
         const bool wasBusy = m_d->gitlabClient->requestProjectId(url);
+        if (wasBusy) {
+            qDebug() << "IssuesManager::requestProjectID - GitLab client is busy, skipping request";
+        }
         return !wasBusy;
     }
     default:

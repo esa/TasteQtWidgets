@@ -238,13 +238,14 @@ distro_check(info)
 print("** Check (and install if necessary a Qt development libraries))")
 check_install_qt_dev(info)
 
-print("** Clear build directory")
-# Create build directory in this script folder and change to it
+print("** Prepare build directory")
+# Ensure build directory exists. Don't remove it to allow incremental builds.
 build_dir = info.build_dir
-if os.path.isdir(build_dir):
-    shutil.rmtree(build_dir)
-os.mkdir(build_dir)
-#os.chdir(build_dir)
+if not os.path.isdir(build_dir):
+    print(f"* info: Creating new build directory: {build_dir}")
+    os.mkdir(build_dir)
+else:
+    print(f"* info: Using existing build directory for incremental build: {build_dir}")
 
 print("** Build module")
 # Set LD_LIBRARY_PATH to point to Qt PySide6 Qt libraries
@@ -263,12 +264,25 @@ cmake_build(info, ncpus - 1, environ=env_copy)
 
 print("** Install module")
 cmake_install(info)
-# Move the Qt libraries to the PyTasteWidgets folder
+# Copy the Qt libraries to the PyTasteQtWidgets folder
 try:
     import glob
-    for file in glob.glob(os.path.join(info.qt_lib_path, "*")):
-        shutil.move(file, os.path.join(info.pytastewidgets_dir, os.path.basename(file)))
-except OSError as e:
+    print(f"* info: Copying Qt libraries from {info.qt_lib_path} to {info.pytastewidgets_dir}")
+    for source_path in glob.glob(os.path.join(info.qt_lib_path, "*")):
+        basename = os.path.basename(source_path)
+        dest_path = os.path.join(info.pytastewidgets_dir, basename)
+
+        if os.path.isdir(source_path):
+            if os.path.exists(dest_path):
+                print(f"  - Removing existing directory: {dest_path}")
+                shutil.rmtree(dest_path)
+            print(f"  - Copying directory: {basename}")
+            shutil.copytree(source_path, dest_path)
+        else:
+            print(f"  - Copying file: {basename}")
+            shutil.copy2(source_path, dest_path)
+    print("* info: Qt libraries successfully copied")
+except Exception as e:
     print(f"Qt libraries could'nt be copied to the PyTasteQtWidgets folder: {e}")
 
 try:
