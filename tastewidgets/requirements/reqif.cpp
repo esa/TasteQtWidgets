@@ -47,10 +47,13 @@ bool ReqIf::importReqIf()
 {
     QDomElement reqif = m_document.firstChildElement();
 
-    if(refFromTag(reqif, "SPECIFICATION-TYPE-REF") == k_SSSLabel) {
+    if(refFromTag(reqif, "SPECIFICATION-TYPE-REF") == k_SSSLabel) 
+    {
         qDebug() << "SSS Detected";
         m_modelType = RequirementsModelBase::SSS;
-    } else {
+    } 
+    else 
+    {
         qDebug() << "SRS Detected";
         m_modelType = RequirementsModelBase::SRS;
     }
@@ -58,10 +61,11 @@ bool ReqIf::importReqIf()
     QDomNodeList hierarchy = reqif.elementsByTagName("SPEC-HIERARCHY");
 
 //    qDebug() << "Hierarchy count " << hierarchy.count();
-
+    qDebug() << "DEBUG: Hierarchy count " << hierarchy.count();
     QList<QPair<QString, QStringList>> childMatrix;
 
-    for (int i = 0; i< hierarchy.count(); i++) {
+    for (int i = 0; i< hierarchy.count(); i++) 
+    {
         QDomNode hierarchyNode = hierarchy.at(i);
 
         QDomElement object = hierarchyNode.firstChildElement("OBJECT");
@@ -71,11 +75,13 @@ bool ReqIf::importReqIf()
 
         QStringList childIds;
 
-        for (QDomNode child = children.firstChildElement("SPEC-HIERARCHY"); !child.isNull(); child = child.nextSibling()) {
+        for (QDomNode child = children.firstChildElement("SPEC-HIERARCHY"); !child.isNull(); child = child.nextSibling()) 
+        {
             QDomElement childObject = child.firstChildElement("OBJECT");
             childIds << refFromTag(childObject, "SPEC-OBJECT-REF");
         }
-
+        qDebug() << " ChildIds List " << childIds;
+        
         QPair<QString, QStringList> reqIfIdChildren;
 
         reqIfIdChildren.first = ReqIfId;
@@ -85,51 +91,68 @@ bool ReqIf::importReqIf()
     }
 
     QDomNodeList specs = reqif.elementsByTagName("SPEC-OBJECT");
-
+    qDebug() << "* SPEC-OBJECTS found = " << specs.count();
     QList<Requirement> reqList;
 
-    for (int i = 0; i< specs.count(); i++) {
+    for (int i = 0; i< specs.count(); i++) 
+    {
         QDomNode specNode = specs.at(i);
 
-        if(specNode.isElement()) {
+        if(specNode.isElement()) 
+        {
+            qDebug() << "** Element " << i;
             QDomElement specification = specNode.toElement();
 
             QString reqIfId = specification.attribute("IDENTIFIER");
 
-            if(reqIfId.size() < 25) {
+            if(reqIfId.size() < 25) 
+            {
                 Requirement requirement;
                 reqFromSpec(specification, &requirement);
-
-                if (m_modelType == RequirementsModelBase::SSS) {
+                qDebug() << "*** requirement " << requirement.m_id;
+                if (m_modelType == RequirementsModelBase::SSS) 
+                {
                     requirement.m_reqType = QString(k_SSSLabel);
                 }
-                else {
+                else 
+                {
                     requirement.m_reqType = QString(k_SRSLabel);
                 }
 
-                for (int i = 0; i < childMatrix.count(); i++) {
+                for (int i = 0; i < childMatrix.count(); i++) 
+                {
                     QPair<QString, QStringList> entry = childMatrix.at(i);
-
-                    if (entry.first.compare(requirement.m_id) == 0) {
+                    qDebug() << "**** entry " << entry.first;
+                    
+                    if (entry.first.compare(requirement.m_id) == 0) 
+                    {
+                        qDebug() << "***** children " << entry.second;
                         requirement.m_children << entry.second;
                     }
                 }
 
                 requirement.m_children.removeDuplicates();
 
+                qDebug() << "Add requirement " << requirement.m_id << " to reqList";
                 reqList << requirement;
             }
-            else {
+            else 
+            {
                 qDebug() << "Invalid ReqIf " << reqIfId;
             }
         }
     }
 
-    for (Requirement &parent : reqList) {
-        if (parent.m_children.count()) {
-            for (QString &childId : parent.m_children) {
-                for (Requirement &child : reqList) {
-                    if (child.m_id.compare(childId) == 0) {
+    for (Requirement &parent : reqList) 
+    {
+        if (parent.m_children.count()) 
+        {
+            for (QString &childId : parent.m_children) 
+            {
+                for (Requirement &child : reqList) 
+                {
+                    if (child.m_id.compare(childId) == 0) 
+                    {
                         child.m_parents << parent.m_id;
                     }
                 }
@@ -137,14 +160,45 @@ bool ReqIf::importReqIf()
         }
     }
 
-    for (Requirement &requirement : reqList) {
+    qDebug() << "Check Requirements:";
+    for (Requirement &requirement : reqList) 
+    {
+        qDebug() << "req = " << requirement.m_id;
+        QDomNodeList relations = reqif.elementsByTagName("SPEC-RELATION");
+        for (int i = 0; i< relations.count(); i++) 
+        {
+            QDomNode relNode = relations.at(i);
+
+            if(relNode.isElement()) 
+            {
+                QDomElement relation = relNode.toElement();
+     
+                QDomNodeList sourceElements = relation.elementsByTagName("SOURCE");
+   
+                QDomNode sourceNode = sourceElements.at(0);
+                QDomElement sourceElement = sourceNode.toElement();
+                
+                if(requirement.m_id.compare(sourceElement.text()) == 0)
+                {
+                    QDomNodeList targetElements = relation.elementsByTagName("TARGET");
+                    QDomNode targetNode = targetElements.at(0);
+                    QDomElement targetElement = targetNode.toElement();
+                    qDebug() << " parent =" << targetElement.text();
+                    requirement.m_parents << targetElement.text();
+               }
+           }
+        }
+    }
+    qDebug() << "Requirements Checked";
+    for (Requirement &requirement : reqList) 
+    {
         requirement.updateIssue(m_model->getRequirements());
     }
     m_model->changeModelState(m_modelType);
     m_model->clearRequirements();
     m_model->addRequirements(reqList);
     m_model->syncRequirements();
-
+   
     return false;
 }
 
@@ -618,8 +672,10 @@ QDomElement ReqIf::createSpecification(const QString longName, const QString des
                 } else {
                     if (m_modelType == RequirementsModelBase::SRS) {
                         bool exists = false;
+                        qDebug() << "Requirement " << requirement.m_id; 
                         for (const QString parent : requirement.m_parents) {
                             for(int i = 0; i < rowCount; ++i) {
+                                qDebug() << " parent " << parent;
                                 QModelIndex index = m_model->index(i, 0);
                                 Requirement requirement = m_model->requirementFromIndex(index);
                                 if (parent.compare(requirement.m_id) == 0) {

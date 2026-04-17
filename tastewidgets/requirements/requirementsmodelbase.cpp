@@ -388,7 +388,12 @@ void RequirementsModelBase::fetchingFinished()
                 m_manager->editRequirement(requirement);
             }
             else {
-                m_manager->createRequirement(requirement);
+                qDebug() << "fetchingFinished : create requirement " << requirement.m_id;
+                if(requirement.m_id.isEmpty()) {
+                    qDebug() << "requirement.m_id Field Empty";
+                } else  {
+                    m_manager->createRequirement(requirement);
+                }     
             }
         }
 
@@ -743,41 +748,32 @@ bool RequirementsModelBase::syncRequirements()
     qDebug() << "Sync Called size" << req_ptr->size() << " req_ptr " << req_ptr << " type " << type;
     for (auto &requirement : *req_ptr) {
         for (const QString parent : requirement.m_parents) {
-            if (reqIfIDExistsExtended(parent, req_ptr)) {
-                for (auto &parentRequirement : *req_ptr) {
-                    if (parentRequirement.m_id.compare(parent) == 0) {
-                        if (!parentRequirement.m_children.contains(requirement.m_id)) {
-                            parentRequirement.m_children.append(requirement.m_id);
-                            updated = true;
-                        }
+            for (auto &parentRequirement : *req_ptr) {
+                if (parentRequirement.m_id.compare(parent) == 0) {
+                    if (!parentRequirement.m_children.contains(requirement.m_id)) {
+                        parentRequirement.m_children.append(requirement.m_id);
+                        updated = true;
                     }
                 }
             }
-            else {
-                if (type != RequirementsModelBase::SRS) {
-                    qDebug() << "Remove all SRS";
-                    requirement.m_parents.removeAll(parent);
-                    updated = true;
-                }
-            }
-        }
+         }
     }
 
     for (auto &requirement : *req_ptr) {
         for (const QString dependent : requirement.m_children) {
-            if (reqIfIDExistsExtended(dependent, req_ptr)) {
+//            if (reqIfIDExistsExtended(dependent, req_ptr)) {
                 auto dependentRequirement = requirementFromIdExtended(dependent, req_ptr);
                 if(!dependentRequirement.m_parents.contains(requirement.m_id)) {
                     requirement.m_children.removeAll(dependent);
                     updated = true;
                 }
-            }
-            else {
-                if (type != RequirementsModelBase::SSS) {
-                    requirement.m_children.removeAll(dependent);
-                    updated = true;
-                }
-            }
+//            }
+//            else {
+//                if (type != RequirementsModelBase::SSS) {
+//                    requirement.m_children.removeAll(dependent);
+//                    updated = true;
+//                }
+//            }
         }
     }
 
