@@ -40,7 +40,7 @@ public:
     void readReqIfFile();
     void writeReqIfFile();
     bool importReqIf();
-
+    static const qsizetype MAX_VALID_REQIFID_SIZE = 40;
 private:
     enum entryType{
         String,

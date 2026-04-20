@@ -382,14 +382,19 @@ void RequirementsModelBase::fetchingFinished()
 
             Issue issue = remoteMatch(requirement.m_id);
 
+            // If the current requirement matched a gitlab issue, then update the requirement's issue details.
             if(issue.mIssueIID) {
                 requirement.m_issue = issue;
                 requirement.updateIssue(&m_requirements);
                 m_manager->editRequirement(requirement);
             }
-            else {
-                qDebug() << "fetchingFinished : create requirement " << requirement.m_id;
+            else 
+            {
+                // The current requirement does not match a gitlab issue.
+                // If the current requirement id is a non-empty string, then create a new requirement in the
+                // requirement manager.
                 if(requirement.m_id.isEmpty()) {
+                    // Empty requirement id - do not create a new requirement in the requirement manager,
                     qDebug() << "requirement.m_id Field Empty";
                 } else  {
                     m_manager->createRequirement(requirement);
@@ -746,6 +751,9 @@ bool RequirementsModelBase::syncRequirements()
     }
 
     qDebug() << "Sync Called size" << req_ptr->size() << " req_ptr " << req_ptr << " type " << type;
+    // Go through the requirement list  - either the remote list or the model list depending on whether this is a new target.
+    // Check that for each requirement with parent requirements, the parents each have the current requirement in their child list.
+    // If the requirement has children appended, it is marked as updated for subsequent processing.
     for (auto &requirement : *req_ptr) {
         for (const QString parent : requirement.m_parents) {
             for (auto &parentRequirement : *req_ptr) {
@@ -758,27 +766,21 @@ bool RequirementsModelBase::syncRequirements()
             }
          }
     }
-
+    // Check that for each requirement in the requirement list, if the requirement has children, then if the current requirement
+    // is in the parent list for those children , it is removed and marked as updated (for further processing).
     for (auto &requirement : *req_ptr) {
         for (const QString dependent : requirement.m_children) {
-//            if (reqIfIDExistsExtended(dependent, req_ptr)) {
-                auto dependentRequirement = requirementFromIdExtended(dependent, req_ptr);
-                if(!dependentRequirement.m_parents.contains(requirement.m_id)) {
-                    requirement.m_children.removeAll(dependent);
-                    updated = true;
-                }
-//            }
-//            else {
-//                if (type != RequirementsModelBase::SSS) {
-//                    requirement.m_children.removeAll(dependent);
-//                    updated = true;
-//                }
-//            }
+            auto dependentRequirement = requirementFromIdExtended(dependent, req_ptr);
+            if(!dependentRequirement.m_parents.contains(requirement.m_id)) {
+                requirement.m_children.removeAll(dependent);
+                updated = true;
+            }
         }
     }
 
     if(updated)
     {
+        // If any entry in the requirement list has changed, update the associated issue. 
         for (auto &requirement : *req_ptr) {
             requirement.updateIssue(req_ptr);
         }
@@ -787,6 +789,8 @@ bool RequirementsModelBase::syncRequirements()
 
     for (auto &requirement : *req_ptr) {
         if (requirement.m_issue.mIssueIID == 0) {
+            // If a requirement in the requirements list does not have a valid remoted ID, return true to indicate
+            // a new requirement.
             updated = true;
             qDebug() << "Sync missing IID for " << requirement.m_id;
         }

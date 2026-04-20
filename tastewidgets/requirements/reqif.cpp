@@ -60,9 +60,7 @@ bool ReqIf::importReqIf()
 
     QDomNodeList hierarchy = reqif.elementsByTagName("SPEC-HIERARCHY");
 
-//    qDebug() << "Hierarchy count " << hierarchy.count();
-    qDebug() << "DEBUG: Hierarchy count " << hierarchy.count();
-    QList<QPair<QString, QStringList>> childMatrix;
+    QList<QPair<QString, QStringList>> childMatrix; // This is a list of requirement stings with their assoicated children.
 
     for (int i = 0; i< hierarchy.count(); i++) 
     {
@@ -80,36 +78,37 @@ bool ReqIf::importReqIf()
             QDomElement childObject = child.firstChildElement("OBJECT");
             childIds << refFromTag(childObject, "SPEC-OBJECT-REF");
         }
-        qDebug() << " ChildIds List " << childIds;
+        // At this point, the ChildIds list should contain the names of the child objects for the current reqif.
         
-        QPair<QString, QStringList> reqIfIdChildren;
+        QPair<QString, QStringList> reqIfIdChildren; // This is a pair containing the name of a requirement and a list of its children's names.
 
         reqIfIdChildren.first = ReqIfId;
         reqIfIdChildren.second = childIds;
-
+        
+        // Add the reuirement/child ids pair to the child matrix.
         childMatrix << reqIfIdChildren;
     }
 
     QDomNodeList specs = reqif.elementsByTagName("SPEC-OBJECT");
-    qDebug() << "* SPEC-OBJECTS found = " << specs.count();
-    QList<Requirement> reqList;
+    
+    QList<Requirement> reqList; // List of requirements to be added to the model.
 
+    // For each valid Spec object, determine the type and any child objects and add to the list of requirements
+    // to be added to the model. A valid spec object is taken to be one with an identifier of a valid length. 
     for (int i = 0; i< specs.count(); i++) 
     {
         QDomNode specNode = specs.at(i);
 
         if(specNode.isElement()) 
         {
-            qDebug() << "** Element " << i;
             QDomElement specification = specNode.toElement();
 
             QString reqIfId = specification.attribute("IDENTIFIER");
 
-            if(reqIfId.size() < 25) 
+            if(reqIfId.size() < ReqIf::MAX_VALID_REQIFID_SIZE) 
             {
                 Requirement requirement;
                 reqFromSpec(specification, &requirement);
-                qDebug() << "*** requirement " << requirement.m_id;
                 if (m_modelType == RequirementsModelBase::SSS) 
                 {
                     requirement.m_reqType = QString(k_SSSLabel);
@@ -119,30 +118,31 @@ bool ReqIf::importReqIf()
                     requirement.m_reqType = QString(k_SRSLabel);
                 }
 
+                // If the id of the requirement matches the name of a requirement in the child matrix, then
+                // add the list of children from the matrix to the current requirement.
                 for (int i = 0; i < childMatrix.count(); i++) 
                 {
                     QPair<QString, QStringList> entry = childMatrix.at(i);
-                    qDebug() << "**** entry " << entry.first;
                     
                     if (entry.first.compare(requirement.m_id) == 0) 
                     {
-                        qDebug() << "***** children " << entry.second;
                         requirement.m_children << entry.second;
                     }
                 }
 
                 requirement.m_children.removeDuplicates();
-
-                qDebug() << "Add requirement " << requirement.m_id << " to reqList";
+                // Add the requirement to the requirements to be added to the model.
                 reqList << requirement;
             }
             else 
             {
-                qDebug() << "Invalid ReqIf " << reqIfId;
+                qDebug() << "Invalid ReqIf Size = " << reqIfId.size();
             }
         }
     }
 
+    // Go through the list of requirements to be added to the model. 
+    // For each requirement, if it has children, check that each child has that requirement in its parent list.
     for (Requirement &parent : reqList) 
     {
         if (parent.m_children.count()) 
@@ -160,15 +160,17 @@ bool ReqIf::importReqIf()
         }
     }
 
-    qDebug() << "Check Requirements:";
+    // Go through the list of requirements to be added to the model.
     for (Requirement &requirement : reqList) 
     {
-        qDebug() << "req = " << requirement.m_id;
+        // Get a list of all the spec-relations.
         QDomNodeList relations = reqif.elementsByTagName("SPEC-RELATION");
         for (int i = 0; i< relations.count(); i++) 
         {
             QDomNode relNode = relations.at(i);
 
+            // If the current requirement is a source (i.e. child) of a spec relation,
+            // add the target (i.e. parent) to the requirement's parent list.
             if(relNode.isElement()) 
             {
                 QDomElement relation = relNode.toElement();
@@ -183,13 +185,13 @@ bool ReqIf::importReqIf()
                     QDomNodeList targetElements = relation.elementsByTagName("TARGET");
                     QDomNode targetNode = targetElements.at(0);
                     QDomElement targetElement = targetNode.toElement();
-                    qDebug() << " parent =" << targetElement.text();
                     requirement.m_parents << targetElement.text();
                }
            }
         }
     }
-    qDebug() << "Requirements Checked";
+
+    // Update issues and add requirements list to the model.
     for (Requirement &requirement : reqList) 
     {
         requirement.updateIssue(m_model->getRequirements());
@@ -383,13 +385,14 @@ QString ReqIf::enumRefFromName(QString name, QList<QPair<QString, QString>> tupl
 
 QString ReqIf::enumNameFromRef(QString ref, QList<QPair<QString, QString>> tupleList)
 {
+    // Go through the list of reference/enum pairs. If the ref argument matches a reference in the list,
+    // return the associated enum name.
     for(QPair<QString, QString> entry: tupleList) {
         if (entry.first.compare(ref) == 0) {
             return entry.second;
         }
     }
-    qDebug() << "Ref Not Found - " << ref;
-
+    // If no match was possible, return an empty string.
     return QString();
 }
 
