@@ -40,7 +40,7 @@ public:
     void readReqIfFile();
     void writeReqIfFile();
     bool importReqIf();
-
+    static const qsizetype MAX_VALID_REQIFID_SIZE = 40;
 private:
     enum entryType{
         String,
@@ -132,34 +132,34 @@ private:
         {String, "SRS-REQ-REQIFID-TXT", "Requirement Identifier", "STRING-TEXT", RequirementsModelBase::ReqIfIdRole, },
         {State, "SRS-REQ-TYPE-ENUM", "Requirement Type", "ENUM-TYPE", RequirementsModelBase::TypeRole, typeList},
         {String, "SRS-REQ-TITLE-TXT", "Title", "STRING-TEXT", RequirementsModelBase::TitleRole, },
-        {String, "SRS-REQ-DESC-TXT", "Detailed Description", "STRING-TEXT", RequirementsModelBase::DetailDescriptionRole, },
-        {State, "SRS-REQ-PRIORITY-ENUM", "Requirement Priority", "ENUM-PRIORITY", RequirementsModelBase::PriorityRole, priorityList},
+        {String, "SRS-REQ-DESC-TXT", "Requirement", "STRING-TEXT", RequirementsModelBase::DetailDescriptionRole, },
+        {State, "SRS-REQ-PRIORITY-ENUM", "Priority", "ENUM-PRIORITY", RequirementsModelBase::PriorityRole, priorityList},
         {State, "SRS-REQ-STATUS-ENUM", "Requirement Status", "ENUM-STATUS", RequirementsModelBase::StatusRole, statusList},
-        {String, "SRS-REF-JUST-TXT", "Justification/Rational", "STRING-TEXT", RequirementsModelBase::JustificationRole, },
-        {String, "SRS-VAL-TXT", "Validation", "STRING-TEXT", RequirementsModelBase::ValidationRole, },
+        {String, "SRS-REF-JUST-TXT", "Rationale/Justification", "STRING-TEXT", RequirementsModelBase::JustificationRole, },
+        {String, "SRS-VAL-TXT", "Validation Method", "STRING-TEXT", RequirementsModelBase::ValidationRole, },
         {String, "SRS-VAL-DESC-TXT", "Validation Description", "STRING-TEXT", RequirementsModelBase::ValDescriptionRole, },
         {State, "SRS-VAL-STATUS-ENUM", "Validation Status", "ENUM-STATUS", RequirementsModelBase::ValStatusRole, statusList},
         {String, "SRS-VAL-EVID-TXT", "Validation Evidence", "STRING-TEXT", RequirementsModelBase::ValEvidenceRole, },
         {State, "SRS-COMP-ENUM", "Compliance", "ENUM-COMPLIANCE", RequirementsModelBase::ComplianceRole, complianceList},
         {State, "SRS-COMP-STATUS-ENUM", "Compliance Status", "ENUM-STATUS", RequirementsModelBase::ComplianceStatusRole, statusList},
-        {String, "SRS-NOTE-TXT", "Notes", "STRING-TEXT", RequirementsModelBase::NoteRole, }
+        {String, "SRS-NOTE-TXT", "Note", "STRING-TEXT", RequirementsModelBase::NoteRole, }
     };
 
     QList<specAttrType> sssAttributes{
         {String, "SSS-REQ-REQIFID-TXT", "Requirement Identifier", "STRING-TEXT", RequirementsModelBase::ReqIfIdRole, },
         {State, "SSS-REQ-TYPE-ENUM", "Requirement Type", "ENUM-TYPE", RequirementsModelBase::TypeRole, typeList},
         {String, "SSS-REQ-TITLE-TXT", "Title", "STRING-TEXT", RequirementsModelBase::TitleRole, },
-        {String, "SSS-REQ-DESC-TXT", "Detailed Description", "STRING-TEXT", RequirementsModelBase::DetailDescriptionRole, },
+        {String, "SSS-REQ-DESC-TXT", "Requirement", "STRING-TEXT", RequirementsModelBase::DetailDescriptionRole, },
         {State, "SSS-REQ-STATUS-ENUM", "Requirement Status", "ENUM-STATUS", RequirementsModelBase::StatusRole, statusList},
-        {String, "SSS-REF-JUST-TXT", "Justification/Rational", "STRING-TEXT", RequirementsModelBase::JustificationRole, },
-        {String, "SSS-VAL-TXT", "Validation", "STRING-TEXT", RequirementsModelBase::ValidationRole, },
+        {String, "SSS-REF-JUST-TXT", "Rationale/Justification", "STRING-TEXT", RequirementsModelBase::JustificationRole, },
+        {String, "SSS-VAL-TXT", "Validation Method", "STRING-TEXT", RequirementsModelBase::ValidationRole, },
         {String, "SSS-VAL-VER-TXT", "Validation Version", "STRING-TEXT", RequirementsModelBase::ValVersionRole, },
         {String, "SSS-VAL-DESC-TXT", "Validation Description", "STRING-TEXT", RequirementsModelBase::ValDescriptionRole, },
         {State, "SSS-VAL-STATUS-ENUM", "Validation Status", "ENUM-STATUS", RequirementsModelBase::ValStatusRole, statusList},
         {String, "SSS-VAL-EVID-TXT", "Validation Evidence", "STRING-TEXT", RequirementsModelBase::ValEvidenceRole, },
         {State, "SSS-COMP-ENUM", "Compliance", "ENUM-COMPLIANCE", RequirementsModelBase::ComplianceRole, complianceList},
         {State, "SSS-COMP-STATUS-ENUM", "Compliance Status", "ENUM-STATUS", RequirementsModelBase::ComplianceStatusRole, statusList},
-        {String, "SSS-NOTE-TXT", "Notes", "STRING-TEXT", RequirementsModelBase::NoteRole, }
+        {String, "SSS-NOTE-TXT", "Note", "STRING-TEXT", RequirementsModelBase::NoteRole, }
     };
 
 };
