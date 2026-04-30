@@ -76,12 +76,13 @@ bool QGitlabClient::editIssue(const int &projectID, const int &issueID, const Is
         return true;
     }
     setBusy(true);
-    auto reply = sendRequest(QGitlabClient::PUT,
-            mUrlComposer.composeEditIssueUrl(projectID, newIssue.mIssueIID, newIssue.mTitle, newIssue.mDescription,
-                    newIssue.mAssignee, newIssue.mState_event, newIssue.mLabels));
+    QUrl requestUrl = mUrlComposer.composeEditIssueUrl(projectID, newIssue.mIssueIID, newIssue.mTitle, newIssue.mDescription,
+                    newIssue.mAssignee, newIssue.mState_event, newIssue.mLabels);
+    auto reply = sendRequest(QGitlabClient::PUT,requestUrl );
     connect(reply, &QNetworkReply::finished, [reply, this]() {
         setBusy(false);
-        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200) {
+        auto replyCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (replyCode != 200) {
             WRN << reply->error() << reply->errorString();
             notifyError(reply, "QGitlabClient::editIssue");
         }
