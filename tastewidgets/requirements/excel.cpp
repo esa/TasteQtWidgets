@@ -138,12 +138,14 @@ void Excel::importExcel()
     parseExcel();
 
     if (!m_error) {
+        // Start from index 3 because we skip the table header
         for (int r = 3; r <= m_rowCount; r++) {
             Requirement requirement;
 
             if (m_modelType == RequirementsModelBase::SSS) {
                 requirement.m_reqType = k_SSSLabel;
-
+                
+                // read values from excel table row
                 requirement.m_id = m_xlsx.read(r, 1).toString().trimmed();
                 requirement.m_type = m_xlsx.read(r, 2).toString();
                 requirement.m_longName = m_xlsx.read(r, 3).toString();
@@ -158,6 +160,13 @@ void Excel::importExcel()
                 requirement.m_valEvidence = m_xlsx.read(r, 12).toString();
                 requirement.m_compliance = m_xlsx.read(r, 13).toString();
                 requirement.m_complianceStatus = m_xlsx.read(r, 14).toString();
+                
+                // check for required fields in SSS document. These are:
+                // Requirement Identifier, Requirement, Validation Method, Validation Version
+                if (requirement.m_id == "" || requirement.m_description == "" || requirement.m_validation.empty() || requirement.m_valVersion == ""){
+                    qDebug() << "Row " << r << " is incomplete, one of the required fields is missing or invalid, skipping...";
+                    continue;
+                }
             }
             else {
                 requirement.m_reqType = k_SRSLabel;
@@ -177,6 +186,13 @@ void Excel::importExcel()
                 requirement.m_valEvidence = m_xlsx.read(r, 13).toString();
                 requirement.m_compliance = m_xlsx.read(r, 14).toString();
                 requirement.m_complianceStatus = m_xlsx.read(r, 15).toString();
+
+                // check for required fields in SRS document, These are:
+                // Requirement Identifier, Requirement, Traceability to Parent, Validation Approach
+                if(requirement.m_id == "" || requirement.m_description == "" || requirement.m_parents.empty() || requirement.m_validation.empty()) {
+                    qDebug() << "Row " << r << " is incomplete, one of the required fields is missing or invalid, skipping...";
+                    continue;
+                }
             }
 
             requirement.updateIssue(m_model->getRequirements());
