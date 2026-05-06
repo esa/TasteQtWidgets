@@ -39,11 +39,20 @@ AddNewRequirementDialog::AddNewRequirementDialog(RequirementsModelBase *model, R
     connect(ui->titleLineEdit, &QLineEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
     connect(ui->idLineEdit, &QLineEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
     connect(ui->descriptionTextEdit, &QTextEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
-
+    connect(ui->specificationComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int index){ 
+        qDebug() << "requirement specification changed " << index;
+        ui->typeComboBox->clear();
+        if(index == 0)
+        {
+            ui->typeComboBox->addItems(TypeListSRS);
+            ui->versionLabel->hide();
+            ui->versionLineEdit->hide();
+        }
+     });
     connect(ui->addRefButton, &QPushButton::clicked, this, &AddNewRequirementDialog::addParent);
     connect(ui->removeRefButton, &QPushButton::clicked, this, &AddNewRequirementDialog::removeParent);
 
-    ui->typeComboBox->addItems(TypeList);
+
     ui->priorityComboBox->addItems(PriorityList);
     ui->statusComboBox->addItems(StatusList);
     ui->valStatusComboBox->addItems(StatusList);
@@ -57,20 +66,16 @@ AddNewRequirementDialog::AddNewRequirementDialog(RequirementsModelBase *model, R
     ui->availableListWidget->addItems(model->unreferencedFromId(QString("")));
     ui->availableListWidget->sortItems();
 
-    enum RequirementsModelBase::modelType type = model->getState();
+    enum RequirementsModelBase::modelType type = RequirementsModelBase::SRS; 
 
     if(type == RequirementsModelBase::SRS)
     {
+        ui->typeComboBox->addItems(TypeListSRS); // Add requirement types from requirement list for SRS.
         ui->specificationComboBox->setCurrentIndex(0);
         ui->versionLabel->hide();
         ui->versionLineEdit->hide();
     }
-
-    if(type == RequirementsModelBase::SSS)
-    {
-        ui->specificationComboBox->setCurrentIndex(1);
-    }
-
+ 
     updateOkButton();
 }
 
