@@ -39,14 +39,24 @@ AddNewRequirementDialog::AddNewRequirementDialog(RequirementsModelBase *model, R
     connect(ui->titleLineEdit, &QLineEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
     connect(ui->idLineEdit, &QLineEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
     connect(ui->descriptionTextEdit, &QTextEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
+    // Register signal handler to handle selection of a different Requirement Specification (SRS/SSS).
     connect(ui->specificationComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int index){ 
-        qDebug() << "requirement specification changed " << index;
+        // Clear combobox list (of Requirement Types).
         ui->typeComboBox->clear();
-        if(index == 0)
+        // Populate combobox list of Requirement Types based on the Requirement Specificiation (indicated by the index argument).
+        if(index == AddNewRequirementDialog::SPECIFICATION_TYPE_INDEX_SRS)
         {
-            ui->typeComboBox->addItems(TypeListSRS);
+            ui->typeComboBox->addItems(TypeListSRS); // Add list of SRS requirement types. 
             ui->versionLabel->hide();
             ui->versionLineEdit->hide();
+        }
+        else if(index == AddNewRequirementDialog::SPECIFICATION_TYPE_INDEX_SSS)
+        {
+            ui->typeComboBox->addItems(TypeListSSS); // Add list of SSS requirement types. 
+        }
+        else
+        {
+        // do nothing
         }
      });
     connect(ui->addRefButton, &QPushButton::clicked, this, &AddNewRequirementDialog::addParent);

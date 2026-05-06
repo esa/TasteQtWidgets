@@ -219,7 +219,6 @@ void VirtualAssistantDialog::onAssignTypeButtonPressed() const
 
 void VirtualAssistantDialog::onVAReady() const
 {
-    qDebug() << "VA is ready";
     // VA server is ready for interaction, enable buttons.
     ui->oneButton->setEnabled(true);
     ui->twoButton->setEnabled(true);
