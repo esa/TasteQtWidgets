@@ -86,10 +86,10 @@ class VaWorker : public QObject
 public:
     VaWorker();
     void stopVa();
-
-public Q_SLOTS:
+ public Q_SLOTS:
     void runVa();
-
+signals:
+   void vaReady();
 private:
     void initConfig();
     void readConfigData();
@@ -124,6 +124,7 @@ private:
     void onReviewButtonPressed() const;
     void onRewordButtonPressed() const;
     void onAssignTypeButtonPressed() const;
+    void onVAReady() const;
     void displayChatResponse(const QString response) const;
     void displayQueryResponse(const QString response) const;
     void displayRequirement(const QJsonObject req, QString& reqString) const;

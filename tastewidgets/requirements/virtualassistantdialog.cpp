@@ -81,7 +81,13 @@ VirtualAssistantDialog::VirtualAssistantDialog(RequirementsModelBase *model, Req
     if(m_requirement == nullptr) {
         connect(ui->oneButton, &QPushButton::clicked, this, &VirtualAssistantDialog::onDuplicationButtonPressed);
         connect(ui->twoButton, &QPushButton::clicked, this, &VirtualAssistantDialog::onConflictButtonPressed);
-
+        connect(m_va,&VaWorker::vaReady,this,&VirtualAssistantDialog::onVAReady); // Install slot for VA ready signal.
+        
+        // Disable buttons until VA is ready.
+        ui->oneButton->setEnabled(false);
+        ui->twoButton->setEnabled(false);
+        ui->threeButton->setEnabled(false);
+        
         ui->oneButton->setText("Duplication ?");
         ui->twoButton->setText("Conflict ?");
         ui->threeButton->hide();
@@ -92,7 +98,12 @@ VirtualAssistantDialog::VirtualAssistantDialog(RequirementsModelBase *model, Req
         connect(ui->oneButton, &QPushButton::clicked, this, &VirtualAssistantDialog::onAssignTypeButtonPressed);
         connect(ui->twoButton, &QPushButton::clicked, this, &VirtualAssistantDialog::onRewordButtonPressed);
         connect(ui->threeButton, &QPushButton::clicked, this, &VirtualAssistantDialog::onReviewButtonPressed);
-
+        connect(m_va,&VaWorker::vaReady,this,&VirtualAssistantDialog::onVAReady);// Install slot for VA ready signal.
+        // Disable buttons until VA is ready.
+        ui->oneButton->setEnabled(false);
+        ui->twoButton->setEnabled(false);
+        ui->threeButton->setEnabled(false);
+        
         ui->oneButton->setText("Assign-Type");
         ui->twoButton->setText("Reword");
         ui->threeButton->setText("Review");
@@ -206,6 +217,15 @@ void VirtualAssistantDialog::onAssignTypeButtonPressed() const
     queryEndPoint("assign-type", m_reqIfId);
 }
 
+void VirtualAssistantDialog::onVAReady() const
+{
+    // VA server is ready for interaction, enable buttons.
+    ui->oneButton->setEnabled(true);
+    ui->twoButton->setEnabled(true);
+    ui->threeButton->setEnabled(true);
+}
+
+
 void VirtualAssistantDialog::displayChatResponse(const QString response) const
 {
     QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
@@ -254,11 +274,19 @@ void VirtualAssistantDialog::displayQueryResponse(const QString response) const
     QJsonArray replyArray = replyVal.toArray();
     
     uiTextOutput += "Query : ";
-    uiTextOutput += (queryIdVal.toString()+"\n");
+    QString query = queryIdVal.toString();
+    uiTextOutput += (query+"\n");
 
     uiTextOutput += "Status : ";
     uiTextOutput += (statusVal.toString()+"\n");
-
+    
+    // If reply is simple, just display as a string.
+    if(replyArray.size() == 0)
+    {
+        uiTextOutput += "Result:\n";
+        uiTextOutput += replyVal.toString();;
+    }
+    
     for(int i = 0; i < replyArray.size(); i++)
     {
         QJsonObject replyItemObj = replyArray[i].toObject();
@@ -273,7 +301,7 @@ void VirtualAssistantDialog::displayQueryResponse(const QString response) const
             displayRequirement(primaryRequirementObj,uiTextOutput);
             uiTextOutput += "\nMatched Requirements\n";
             QString primaryRequirementId = primaryRequirementObj.value("id").toString();
- 
+
             for( unsigned int i = 0; i < numAppliedRequirements; i++)
             {
                 const QJsonObject appliedRequirementObj = appliedRequirementsArray[i].toObject();
@@ -427,6 +455,13 @@ void VaWorker::runVa()
     connect(m_vaProcess, &QProcess::readyReadStandardOutput, this, [this]() {
         QByteArray output = m_vaProcess->readAllStandardOutput();
         qDebug() << "Python stdout:" << output;
+        // Look for  * Serving Flask app 'vareq.vaserver'
+        QString vaReadyString = "* Serving Flask app 'vareq.vaserver'";
+        QString pythonResponse = QString(output);
+        if(pythonResponse.contains(vaReadyString)){
+            // VA is ready, so emit signal.
+            emit vaReady();
+        }
     });
 
     // Capture stderr - THIS IS IMPORTANT FOR DEBUGGING

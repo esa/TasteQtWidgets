@@ -39,11 +39,34 @@ AddNewRequirementDialog::AddNewRequirementDialog(RequirementsModelBase *model, R
     connect(ui->titleLineEdit, &QLineEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
     connect(ui->idLineEdit, &QLineEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
     connect(ui->descriptionTextEdit, &QTextEdit::textChanged, this, &AddNewRequirementDialog::updateOkButton);
-
+    // Register signal handler to handle selection of a different Requirement Specification (SRS/SSS).
+    connect(ui->specificationComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int index){ 
+        // Clear combobox list (of Requirement Types).
+        ui->typeComboBox->clear();
+        // Populate combobox list of Requirement Types based on the Requirement Specificiation (indicated by the index argument).
+        if(index == AddNewRequirementDialog::SPECIFICATION_TYPE_INDEX_SRS)
+        {
+            ui->typeComboBox->addItems(TypeListSRS); // Add list of SRS requirement types.
+            // SRS Requirements do not have a validation version field, so hide the label and edit box.
+            ui->versionLabel->hide();
+            ui->versionLineEdit->hide();
+        }
+        else if(index == AddNewRequirementDialog::SPECIFICATION_TYPE_INDEX_SSS)
+        {
+            ui->typeComboBox->addItems(TypeListSSS); // Add list of SSS requirement types. 
+            // SSS Requirements have a validation version field, so show the label and edit box.
+            ui->versionLabel->show();
+            ui->versionLineEdit->show();
+        }
+        else
+        {
+        // do nothing
+        }
+     });
     connect(ui->addRefButton, &QPushButton::clicked, this, &AddNewRequirementDialog::addParent);
     connect(ui->removeRefButton, &QPushButton::clicked, this, &AddNewRequirementDialog::removeParent);
 
-    ui->typeComboBox->addItems(TypeList);
+
     ui->priorityComboBox->addItems(PriorityList);
     ui->statusComboBox->addItems(StatusList);
     ui->valStatusComboBox->addItems(StatusList);
@@ -57,18 +80,15 @@ AddNewRequirementDialog::AddNewRequirementDialog(RequirementsModelBase *model, R
     ui->availableListWidget->addItems(model->unreferencedFromId(QString("")));
     ui->availableListWidget->sortItems();
 
-    enum RequirementsModelBase::modelType type = model->getState();
-
+    // Set the default requirement type for the new requirement to SRS.
+    enum RequirementsModelBase::modelType type = RequirementsModelBase::SRS; 
     if(type == RequirementsModelBase::SRS)
     {
+        ui->typeComboBox->addItems(TypeListSRS); // Add requirement types from requirement list for SRS.
         ui->specificationComboBox->setCurrentIndex(0);
+        // SRS Requirements do not have a validation version field, so hide the label and edit box.
         ui->versionLabel->hide();
         ui->versionLineEdit->hide();
-    }
-
-    if(type == RequirementsModelBase::SSS)
-    {
-        ui->specificationComboBox->setCurrentIndex(1);
     }
 
     updateOkButton();
