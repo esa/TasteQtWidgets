@@ -225,9 +225,43 @@ void RequirementsModelBase::addRequirements(const QList<Requirement> &requiremen
             RequirementsModelCommon::addRequirements(filtered);
             break;
         }
-    default:
+    default:{
+        bool containsSRS = false;
+        bool containsSSS = false;
+        
         RequirementsModelCommon::addRequirements(requirements);
+        // Determine which requirement specification (SRS) each requirement imported from gitlab belongs to.
+        for (const Requirement &requirement : requirements) {
+            if (requirement.m_issue.mLabels.contains(k_SRSLabel)) {
+                    containsSRS = true;
+                }
+            if (requirement.m_issue.mLabels.contains(k_SSSLabel)) {
+                    containsSSS = true;
+                }
+        }
+
+        // Set the requirement specification for the model according to the requirements imported. 
+        if(containsSRS == true )
+        {
+            if(containsSSS == true)
+            {
+                m_type = Both;
+            }
+            else
+            {
+                m_type = SRS;
+            }
+        }
+        else if(containsSSS == true)
+        {
+            m_type = SSS;
+        }
+        else
+        {
+            m_type = Empty;
+        }
         break;
+        }
     }
 }
 

@@ -24,9 +24,20 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
     , m_requirement(requirement)
     , ui(new Ui::BasicRequirementDialog)
 {
-//    m_model->syncTraceability();
-
     ui->setupUi(this);
+    const bool isSSS = (m_requirement->m_reqType.compare(k_SSSLabel) == 0);
+    // SRS and SSS can contain different types of requirement.
+    // Set the list of requirement types according to the specification type.
+    const QStringList* typeListPtr = nullptr; 
+    if(isSSS)
+    {
+        typeListPtr = &TypeListSSS;
+    }
+    else
+    {
+        typeListPtr = &TypeListSRS;
+    }
+    auto typeList = *typeListPtr;
     connect(ui->titleLineEdit, &QLineEdit::textChanged, this, &EditRequirementDialog::updateOkButton);
     connect(ui->browserButton, &QPushButton::clicked, this, &EditRequirementDialog::openIssueLink);
     connect(ui->descriptionTextEdit, &QTextEdit::textChanged, this, &EditRequirementDialog::updateOkButton);
@@ -39,7 +50,7 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
     ui->idLineEdit->setText(m_requirement->m_id);
     ui->descriptionTextEdit->setText(m_requirement->m_description);
     ui->noteTextEdit->setText(m_requirement->m_note);
-    ui->typeComboBox->addItems(TypeList);
+    ui->typeComboBox->addItems(typeList); // Add requirement types from requirement list.
     ui->statusComboBox->addItems(StatusList);
     ui->justificationTextEdit->setText(m_requirement->m_justification);
     ui->versionLineEdit->setText(m_requirement->m_valVersion);
@@ -49,7 +60,7 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
     ui->complianceComboBox->addItems(ComplianceList);
     ui->complianceStatusComboBox->addItems(StatusList);
 
-    auto typeIndex = TypeList.indexOf(m_requirement->m_type);
+    auto typeIndex = typeList.indexOf(m_requirement->m_type);
     auto statusIndex = StatusList.indexOf(m_requirement->m_status);
     auto validationIndex = StatusList.indexOf(m_requirement->m_valStatus);
     auto complianceIndex = ComplianceList.indexOf(m_requirement->m_compliance);
@@ -68,7 +79,8 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
     ui->complianceComboBox->setCurrentIndex(complianceIndex);
     ui->complianceStatusComboBox->setCurrentIndex(complianceStatusIndex);
 
-    if (m_requirement->m_reqType.compare(k_SSSLabel) == 0) {
+    // Display specification combo box according to specification type.
+    if (isSSS) {
         ui->specificationComboBox->setCurrentIndex(1);
         ui->priorityComboBox->setEnabled(false);
         ui->addRefButton->setEnabled(false);
@@ -76,7 +88,6 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
     }
     else {
         ui->specificationComboBox->setCurrentIndex(0);
-
         ui->priorityComboBox->addItems(PriorityList);
         auto priorityIndex = PriorityList.indexOf(m_requirement->m_priority);
         if(priorityIndex == -1) priorityIndex = 0;

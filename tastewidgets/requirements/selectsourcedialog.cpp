@@ -142,12 +142,12 @@ void SelectSourceDialog::updateServerStatus()
     qDebug() << "  Has Valid Project ID:" << m_manager->hasValidProjectID();
 
     if (m_manager->hasValidProjectID()) {
-        ui->credentialWidget->setStatus("Url OK");
+        ui->credentialWidget->setStatus("Url/Token OK");
         qDebug() << "Update Server Url - Status set to OK";
         m_url = m_manager->projectUrl();
         m_token = m_manager->token();
     } else {
-        ui->credentialWidget->setStatus("Url Invalid");
+        ui->credentialWidget->setStatus("Url/Token Invalid");
         qDebug() << "Update Server Url - Status set to INVALID"
                  << "\n  Reason: projectID =" << m_manager->projectID()
                  << "(needs to be >= 0)";
@@ -166,7 +166,7 @@ void SelectSourceDialog::accept()
         qDebug() << "Select accepted";
         QDialog::accept();
     } else {
-        QMessageBox::warning(this, tr("Invalid GitLab Url"), tr("This Url is invalid:\n%1").arg(m_manager->projectUrl()));
+        QMessageBox::warning(this, tr("Select Error"), tr("Try re-entering URL and/or token"));
     }
 }
 

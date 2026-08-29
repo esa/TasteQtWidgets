@@ -57,26 +57,44 @@ static const QStringList PriorityList = {"Unassigned", "Low", "Medium", "High", 
 static const QStringList StatusList = {"Not Started","In Work", "Under Review", "Approved"};
 static const QStringList ComplianceList = {"Not Compliant", "Partially Compliant", "Compliant"};
 
-static const QStringList TypeList = {
+// These requirement types can appear in an SRS.
+static const QStringList TypeListSRS = {
         "Functional",
         "Performance",
         "Interface",
         "Operational",
         "Resources",
-        "Design",
-        "Implementation",
+        "Design Req",
         "Security",
         "Portability",
         "Quality",
         "Reliability",
         "Maintainability",
         "Safety",
-        "Configuration",
-        "Installation",
-        "Data Definition",
+        "Config",
+        "Data Def",
         "Human Factors",
-        "Adaption"
+        "Adaptation"
 };
+// These requirement types can appear in an SSS.
+static const QStringList TypeListSSS = {
+  "Capabilities",
+  "Interface",
+  "Adaptation",
+  "Resources",
+  "Security",
+  "Safety",
+  "Reliability",
+  "Design",
+  "Operations",
+  "Maintenance",
+  "Observability",
+  "V&V Process",
+  "Validation Approach",
+  "Validation",
+   "Verification"
+};
+
 
 class Requirement
 {
