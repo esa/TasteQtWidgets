@@ -23,8 +23,10 @@
 #include <QList>
 #include <QVector>
 
+class QHBoxLayout;
 class QLineEdit;
 class QPushButton;
+class QShowEvent;
 class QTextBrowser;
 class QLabel;
 
@@ -46,6 +48,15 @@ public:
     explicit OrbitChatDialog(const QString &projectDir, QWidget *parent = nullptr);
     ~OrbitChatDialog() override;
 
+    //: Text the agent is given before the user's first question - context and
+    //: standing instructions. Sent once, when the window is first shown.
+    void setBriefing(const QString &briefing);
+    //: Add a helper button under the transcript that asks `prompt` when pressed.
+    void addHelper(const QString &label, const QString &prompt);
+
+protected:
+    void showEvent(QShowEvent *event) override;
+
 private Q_SLOTS:
     void onReady();
     void onFailed(const QString &message);
@@ -63,6 +74,9 @@ private:
     };
 
     void send();
+    //: Sends `question` as a user turn, whatever its source (the entry line or
+    //: a helper button), and starts a fresh answer block. Ignored when busy.
+    void askQuestion(const QString &question);
     void appendAnswerChunk(const QString &text);
     void appendNote(const QString &html);
     void renderTranscript();
@@ -81,6 +95,10 @@ private:
     QLineEdit *m_entry = nullptr;
     QPushButton *m_stopButton = nullptr;
     QLabel *m_status = nullptr;
+    QHBoxLayout *m_helperRow = nullptr;
+    QString m_projectDir;
+    QString m_briefing;
+    bool m_started = false;
     QVector<Block> m_blocks;
     QString m_answerMarkdown;
     int m_answerIndex = -1;

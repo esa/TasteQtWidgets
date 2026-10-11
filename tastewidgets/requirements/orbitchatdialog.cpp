@@ -35,12 +35,14 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QShowEvent>
 #include <QTextBrowser>
 #include <QTextCursor>
 #include <QVBoxLayout>
@@ -204,10 +206,11 @@ QList<tqtw_orbitacp::Answer> askForm(QWidget *parent, const QList<tqtw_orbitacp:
 OrbitChatDialog::OrbitChatDialog(const QString &projectDir, QWidget *parent)
     : QDialog(parent)
     , m_controller(new OrbitChatController(this))
+    , m_projectDir(projectDir)
 {
-    setWindowTitle(tr("Orbit — Space Creator assistant"));
+    setWindowTitle(tr("Orbit — requirements assistant"));
     setAttribute(Qt::WA_DeleteOnClose);
-    resize(720, 700);
+    resize(820, 720);
 
     auto *transcript = new OrbitTranscript(this);
     m_transcript = transcript;
@@ -221,7 +224,7 @@ OrbitChatDialog::OrbitChatDialog(const QString &projectDir, QWidget *parent)
     m_pointSize = kBasePointSize;
 
     m_entry = new QLineEdit(this);
-    m_entry->setPlaceholderText(tr("Ask Orbit to build or connect functions… (starting)"));
+    m_entry->setPlaceholderText(tr("Ask Orbit about the requirements… (starting)"));
     m_entry->setEnabled(false);
     connect(m_entry, &QLineEdit::returnPressed, this, &OrbitChatDialog::send);
 
@@ -234,6 +237,10 @@ OrbitChatDialog::OrbitChatDialog(const QString &projectDir, QWidget *parent)
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(m_transcript, 1);
     layout->addWidget(m_status);
+    // Helper buttons live in their own row, above the entry line.
+    m_helperRow = new QHBoxLayout();
+    m_helperRow->addStretch(1);
+    layout->addLayout(m_helperRow);
     auto *row = new QHBoxLayout();
     row->addWidget(m_entry, 1);
     row->addWidget(m_stopButton);
@@ -246,8 +253,9 @@ OrbitChatDialog::OrbitChatDialog(const QString &projectDir, QWidget *parent)
     connect(m_controller, &OrbitChatController::permissionRequested, this, &OrbitChatDialog::onPermissionRequested);
     connect(m_controller, &OrbitChatController::questionsRequested, this, &OrbitChatDialog::onQuestionsRequested);
 
-    appendNote(tr("<i>Working in %1</i>").arg(escaped(projectDir)));
-    m_controller->start(projectDir);
+    appendNote(tr("<i>Working in %1</i>").arg(escaped(m_projectDir)));
+    // The agent is started in showEvent(), once the briefing (set by the caller)
+    // is known - so the caller can setBriefing() and addHelper() first.
 }
 
 OrbitChatDialog::~OrbitChatDialog()
@@ -330,13 +338,49 @@ void OrbitChatDialog::onQuestionsRequested(const QList<tqtw_orbitacp::Question> 
     m_controller->answerQuestions(askForm(this, questions));
 }
 
+void OrbitChatDialog::showEvent(QShowEvent *event)
+{
+    QDialog::showEvent(event);
+    if (!m_started) {
+        m_started = true;
+        m_controller->start(m_projectDir, m_briefing);
+    }
+}
+
+void OrbitChatDialog::setBriefing(const QString &briefing)
+{
+    m_briefing = briefing;
+}
+
+void OrbitChatDialog::addHelper(const QString &label, const QString &prompt)
+{
+    if (m_helperRow == nullptr) {
+        return;
+    }
+    auto *button = new QPushButton(label, this);
+    button->setToolTip(prompt);
+    connect(button, &QPushButton::clicked, this, [this, prompt]() { askQuestion(prompt); });
+    // Before the trailing stretch, so the buttons sit on the right.
+    m_helperRow->insertWidget(m_helperRow->count() - 1, button);
+}
+
 void OrbitChatDialog::send()
 {
     const QString question = m_entry->text().trimmed();
-    if (question.isEmpty() || !m_entry->isEnabled()) {
+    if (question.isEmpty()) {
         return;
     }
     m_entry->clear();
+    askQuestion(question);
+}
+
+void OrbitChatDialog::askQuestion(const QString &question)
+{
+    // A helper button can be pressed while orbit is still starting, or while an
+    // answer streams; both would be refused (or interleaved), so ignore it.
+    if (question.trimmed().isEmpty() || !m_entry->isEnabled()) {
+        return;
+    }
     appendNote(QStringLiteral("<span class=\"you\">you:</span> %1").arg(escaped(question)));
 
     Block answer;

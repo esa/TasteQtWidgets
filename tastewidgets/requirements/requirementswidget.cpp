@@ -23,6 +23,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include "requirementsmanager.h"
 #include "requirementsmodelcommon.h"
 #include "orbitchatdialog.h"
+#include "orbitrequirementcontext.h"
 #include "ui_requirementswidget.h"
 #include "widgetbar.h"
 
@@ -423,12 +424,51 @@ void RequirementsWidget::openIssueLink(const QModelIndex &index)
 
 void RequirementsWidget::showOrbitChat()
 {
-    // The agent works in the directory the requirements project lives in;
-    // without a source directory, the process's current directory.
-    const QString projectDir = m_reqManager && !m_reqManager->projectUrl().isEmpty()
-            ? m_reqManager->projectUrl()
-            : QDir::currentPath();
-    auto *dialog = new OrbitChatDialog(projectDir, this);
+    if (!m_model) {
+        return;
+    }
+
+    // Orbit needs a directory to work in and the requirements themselves. The
+    // requirements server URL is not a directory, so it is never used as one:
+    // the loaded requirements are written to a real temp directory instead.
+    const QString specType = [this]() {
+        switch (m_model->getState()) {
+        case RequirementsModelBase::SSS:
+            return QStringLiteral("SSS");
+        case RequirementsModelBase::Both:
+            return QStringLiteral("SRS and SSS");
+        case RequirementsModelBase::SRS:
+            return QStringLiteral("SRS");
+        default:
+            return QStringLiteral("requirements");
+        }
+    }();
+    const OrbitRequirementContext::Prepared prepared =
+            OrbitRequirementContext::prepare(*m_model->getRequirements(), specType);
+
+    auto *dialog = new OrbitChatDialog(prepared.directory, this);
+    dialog->setBriefing(prepared.briefing);
+    // The helper buttons replace the old Virtual Assistant's named queries.
+    dialog->addHelper(tr("Find duplicates"),
+            tr("Scan every requirement in requirements.md and find duplicates: pairs (or groups) of "
+               "requirements that express the same thing, per ECSS 8.2.5 Uniqueness. For each, give the "
+               "requirement ids, why they duplicate each other, and which one to keep or how to merge them."));
+    dialog->addHelper(tr("Check consistency and completeness"),
+            tr("Check the whole requirements set for consistency and completeness against ECSS-E-ST-10-06C. "
+               "Look for contradictions between requirements (8.2.9, 8.2.7), requirements that are not "
+               "self-contained (8.2.8), requirements that are not verifiable (8.2.9), unquantified performance "
+               "(8.2.1), missing tolerance (8.2.10) and broken traceability (8.2.3). Report each finding with "
+               "the requirement ids, the problem and the ECSS clause."));
+    dialog->addHelper(tr("Review against ECSS"),
+            tr("Review each requirement against ECSS-E-ST-10-06C: the required verbal form and wording "
+               "(shall/should/may/can), the forbidden terms (8.3.3, e.g. \"etc.\", \"and/or\", \"optimize\", "
+               "\"adequate\", \"as far as possible\"), singularity (8.2.7) and unambiguity (8.2.4). Give a "
+               "compliance score 0-100 per requirement and how to fix the wording."));
+    dialog->addHelper(tr("Check traceability"),
+            tr("Check traceability of the requirements set (ECSS 8.2.3): every requirement should be "
+               "backwards- and forward-traceable. Using the parents/children in requirements.md, list "
+               "requirements with no parent, no child, or a trace to an id that does not exist."));
+
     dialog->show();
     dialog->raise();
     dialog->activateWindow();

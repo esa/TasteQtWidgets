@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 */
 #include "editrequirementdialog.h"
 
+#include "orbitrequirementcontext.h"
+
 #include <QDir>
 
 namespace requirement {
@@ -127,7 +129,31 @@ void EditRequirementDialog::showOrbitChat()
 {
     updateRequirement();
 
-    auto *dialog = new OrbitChatDialog(QDir::currentPath(), this);
+    // Ask about this one requirement, with the whole set alongside it so Orbit
+    // can judge traceability and duplication against the rest.
+    QList<Requirement> requirements = m_model ? *m_model->getRequirements() : QList<Requirement>();
+    const QString specType =
+            m_requirement->m_reqType.compare(k_SSSLabel) == 0 ? QStringLiteral("SSS") : QStringLiteral("SRS");
+    const OrbitRequirementContext::Prepared prepared = OrbitRequirementContext::prepare(requirements, specType);
+
+    auto *dialog = new OrbitChatDialog(prepared.directory, this);
+    dialog->setBriefing(prepared.briefing);
+    const QString id = m_requirement->m_id.trimmed();
+    dialog->addHelper(tr("Review this requirement"),
+            tr("Review requirement %1 in requirements.md against ECSS-E-ST-10-06C: compliance score 0-100, "
+               "the wording (shall/should/may/can, forbidden terms 8.3.3), singularity (8.2.7), unambiguity "
+               "(8.2.4), quantifiability (8.2.1) and verifiability (8.2.9), then a reworded version.")
+                    .arg(id));
+    dialog->addHelper(tr("Suggest a type"),
+            tr("For requirement %1 in requirements.md, give the single ECSS requirement type from SS6 "
+               "(functional, mission, interface, environmental, operational, human factor, logistics "
+               "support, physical, product assurance, configuration, design, verification) and one sentence "
+               "of justification.")
+                    .arg(id));
+    dialog->addHelper(tr("Find duplicates of this one"),
+            tr("Find every requirement in requirements.md that duplicates or overlaps requirement %1 "
+               "(ECSS 8.2.5). Give the ids, why they overlap, and how to resolve it.")
+                    .arg(id));
     dialog->show();
     dialog->raise();
     dialog->activateWindow();

@@ -39,6 +39,8 @@ target_sources(${LIB_NAME} PRIVATE
   orbitchatdialog.h
   orbitmarkdown.cpp
   orbitmarkdown.h
+  orbitrequirementcontext.cpp
+  orbitrequirementcontext.h
   ../tracecommon/tracecommonresources.qrc
 )
 
