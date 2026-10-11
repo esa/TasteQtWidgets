@@ -378,7 +378,12 @@ QString QGitlabClient::token()
 QNetworkReply *QGitlabClient::sendRequest(QGitlabClient::ReqType reqType, const QUrl &uri)
 {
     QNetworkRequest request(uri);
-    request.setRawHeader("PRIVATE-TOKEN", mToken.toUtf8());
+    // Public projects can be read anonymously. Only send the token when one is
+    // set, otherwise an empty PRIVATE-TOKEN header is sent and the server rejects
+    // the request instead of serving the public data.
+    if (!mToken.isEmpty()) {
+        request.setRawHeader("PRIVATE-TOKEN", mToken.toUtf8());
+    }
     request.setHeader(QNetworkRequest::ContentTypeHeader, kContentType);
 
     QNetworkReply *reply;

@@ -318,8 +318,9 @@ void RequirementsWidget::setLoginData()
         QApplication::processEvents();
     }
 
-    if (m_requirementsUrl.isEmpty() || m_requirementsToken.isEmpty()) {
-        qDebug() << "RequirementsWidget::setLoginData - Login empty (URL or token)";
+    // Only the URL is required. Public projects can be loaded without a token.
+    if (m_requirementsUrl.isEmpty()) {
+        qDebug() << "RequirementsWidget::setLoginData - Login empty (no URL)";
         return;
     }
 

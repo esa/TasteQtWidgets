@@ -142,7 +142,8 @@ void SelectSourceDialog::updateServerStatus()
     qDebug() << "  Has Valid Project ID:" << m_manager->hasValidProjectID();
 
     if (m_manager->hasValidProjectID()) {
-        ui->credentialWidget->setStatus("Url/Token OK");
+        // A public project can be validated without a token, so don't claim the token was checked.
+        ui->credentialWidget->setStatus(m_manager->token().isEmpty() ? "Url OK (public)" : "Url/Token OK");
         qDebug() << "Update Server Url - Status set to OK";
         m_url = m_manager->projectUrl();
         m_token = m_manager->token();

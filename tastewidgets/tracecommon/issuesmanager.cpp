@@ -64,8 +64,10 @@ bool IssuesManager::setCredentials(const QString &url, const QString &token)
     Q_EMIT projectUrlChanged(m_projectUrl);
     Q_EMIT tokenChanged(m_token);
 
-    if (m_projectUrl.isEmpty() || m_token.isEmpty()) {
-        qDebug() << "IssuesManager::setCredentials - Missing URL or token, returning false";
+    // Only the URL is mandatory: a public project can be read without a token.
+    // A token is only needed to modify the requirements (create/edit/close issues).
+    if (m_projectUrl.isEmpty()) {
+        qDebug() << "IssuesManager::setCredentials - Missing URL, returning false";
         return false;
     }
 
