@@ -341,9 +341,17 @@ void RequirementsWidget::setLoginData()
          return;
     }
 
-    // Remember whether another request was already in flight. Starting a second
-    // fetch on top of a pending one is what turns a transient failure into a loop.
-    const bool managerWasIdle = !m_reqManager->isBusy();
+    // If the previous connection attempt already failed, do not clear the list
+    // and do not retry. updateServerStatus() calls setLoginData() from the
+    // connectionError handler; retrying here would re-request, fail again and
+    // loop forever. Wait for new credentials, or for an explicit refresh which
+    // clears this flag.
+    if (m_connectionErrorShown) {
+        qDebug() << "RequirementsWidget::setLoginData - Previous connection failed, not retrying";
+        ui->sourceLineEdit->setText(m_requirementsUrl);
+        ui->applyPushButton->setEnabled(true);
+        return;
+    }
 
     while (m_reqManager->isBusy()) {
         qDebug() << "RequirementsWidget::setLoginData - Manager is busy, processing events";
@@ -360,13 +368,7 @@ void RequirementsWidget::setLoginData()
 
     if (m_requirementsUrl == m_reqManager->projectUrl() && m_requirementsToken == m_reqManager->token()) {
         qDebug() << "RequirementsWidget::setLoginData - Credentials match manager, requesting requirements";
-        // Only fetch when the manager was idle, we are not in the middle of
-        // checking a connection, and the last attempt did not fail. Without this
-        // guard a failing fetch re-enters here through
-        // connectionError -> updateServerStatus and loops forever.
-        if (managerWasIdle && !m_checkingServer && !m_connectionErrorShown) {
-            m_reqManager->requestAllRequirements("");
-        }
+        m_reqManager->requestAllRequirements("");
         ui->sourceLineEdit->setText(m_requirementsUrl);
         ui->applyPushButton->setEnabled(true);
         return;
