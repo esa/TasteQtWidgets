@@ -22,11 +22,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include "selectsourcedialog.h"
 #include "requirementsmanager.h"
 #include "requirementsmodelcommon.h"
-#include "virtualassistantdialog.h"
+#include "orbitchatdialog.h"
 #include "ui_requirementswidget.h"
 #include "widgetbar.h"
 
 #include <QCursor>
+#include <QDir>
 #include <QDesktopServices>
 #include <QHeaderView>
 #include <QLineEdit>
@@ -83,7 +84,7 @@ RequirementsWidget::RequirementsWidget(QWidget *parent)
             &RequirementsWidget::modelSelectionChanged);
     connect(ui->allRequirements, &QTableView::doubleClicked, this, &RequirementsWidget::showEditRequirementDialog);
     connect(ui->clearButton, &QPushButton::clicked, this, &RequirementsWidget::onClear);
-    connect(ui->vaButton, &QPushButton::clicked, this, &RequirementsWidget::showVirtualAssistantDialog);
+    connect(ui->vaButton, &QPushButton::clicked, this, &RequirementsWidget::showOrbitChat);
     connect(ui->createRequirementButton, &QPushButton::clicked, this, &RequirementsWidget::showNewRequirementDialog);
     connect(ui->exportRequirementsButton, &QPushButton::clicked, this, &RequirementsWidget::showExportRequirementsDialog);
     connect(ui->importRequirementsButton, &QPushButton::clicked, this, &RequirementsWidget::showImportRequirementsDialog);
@@ -420,11 +421,17 @@ void RequirementsWidget::openIssueLink(const QModelIndex &index)
 }
 
 
-void RequirementsWidget::showVirtualAssistantDialog()
+void RequirementsWidget::showOrbitChat()
 {
-    QScopedPointer<VirtualAssistantDialog> dialog(new VirtualAssistantDialog(m_model));
-    dialog->setModal(true);
-    const auto ret = dialog->exec();
+    // The agent works in the directory the requirements project lives in;
+    // without a source directory, the process's current directory.
+    const QString projectDir = m_reqManager && !m_reqManager->projectUrl().isEmpty()
+            ? m_reqManager->projectUrl()
+            : QDir::currentPath();
+    auto *dialog = new OrbitChatDialog(projectDir, this);
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }
 
 

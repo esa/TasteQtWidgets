@@ -111,7 +111,7 @@ protected Q_SLOTS:
     void updateServerStatus();
     void openIssueLink(const QModelIndex &index);
     void requestRequirements();
-    void showVirtualAssistantDialog();
+    void showOrbitChat();
     void showNewRequirementDialog();
     void showEditRequirementDialog(const QModelIndex &index);
     void showExportRequirementsDialog();

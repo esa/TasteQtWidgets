@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 */
 #include "editrequirementdialog.h"
 
+#include <QDir>
+
 namespace requirement {
 
 EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requirement *requirement, QWidget *parent)
@@ -44,7 +46,7 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
 
     connect(ui->addRefButton, &QPushButton::clicked, this, &EditRequirementDialog::addParent);
     connect(ui->removeRefButton, &QPushButton::clicked, this, &EditRequirementDialog::removeParent);
-    connect(ui->virtualassistantButton, &QPushButton::clicked, this, &EditRequirementDialog::showVirtualAssistantDialog);
+    connect(ui->virtualassistantButton, &QPushButton::clicked, this, &EditRequirementDialog::showOrbitChat);
 
     ui->titleLineEdit->setText(m_requirement->m_longName);
     ui->idLineEdit->setText(m_requirement->m_id);
@@ -121,15 +123,14 @@ EditRequirementDialog::~EditRequirementDialog()
     delete ui;
 }
 
-void EditRequirementDialog::showVirtualAssistantDialog()
+void EditRequirementDialog::showOrbitChat()
 {
     updateRequirement();
 
-    QString reqIfId = ui->idLineEdit->text();
-    QString description = ui->descriptionTextEdit->toPlainText();
-    QScopedPointer<VirtualAssistantDialog> dialog(new VirtualAssistantDialog(m_model, m_requirement));
-    dialog->setModal(true);
-    const auto ret = dialog->exec();
+    auto *dialog = new OrbitChatDialog(QDir::currentPath(), this);
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }
 
 void EditRequirementDialog::openIssueLink()

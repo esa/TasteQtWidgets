@@ -32,14 +32,18 @@ target_sources(${LIB_NAME} PRIVATE
   requirementswidget.cpp
   requirementswidget.h
   requirementswidget.ui
-  virtualassistantdialog.cpp
-  virtualassistantdialog.h
-  virtualassistantdialog.ui
+  # The Orbit chatbot that replaces the old VirtualAssistantDialog.
+  orbitchatcontroller.cpp
+  orbitchatcontroller.h
+  orbitchatdialog.cpp
+  orbitchatdialog.h
+  orbitmarkdown.cpp
+  orbitmarkdown.h
   ../tracecommon/tracecommonresources.qrc
 )
 
 target_include_directories(${LIB_NAME} ${QXLSX_PUBLIC_HEADERS} PUBLIC .)
 target_link_libraries(${LIB_NAME}
     PUBLIC Qt6::Core Qt6::Widgets tracecommon QXlsx
-    PRIVATE Qt6::Concurrent Qt6::Xml QGitlabAPI)
+    PRIVATE Qt6::Concurrent Qt6::Xml Qt6::Svg tqtw_orbitacp tqtw_mermaid2svg QGitlabAPI)
 target_compile_definitions(${LIB_NAME} PUBLIC QGITLABAPI_LIBRARY QT_DEBUG_OUTPUT)

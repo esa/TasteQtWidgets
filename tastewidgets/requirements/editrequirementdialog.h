@@ -28,7 +28,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include <QDialog>
 #include <QPointer>
 #include "requirement.h"
-#include "virtualassistantdialog.h"
+#include "orbitchatdialog.h"
 
 namespace Ui {
 class BasicRequirementDialog;
@@ -55,7 +55,7 @@ private:
     void removeParent();
     void updateOkButton();
     void openIssueLink();
-    void showVirtualAssistantDialog();
+    void showOrbitChat();
     Requirement *m_requirement;
     RequirementsModelBase *m_model;
     Ui::BasicRequirementDialog *ui;
