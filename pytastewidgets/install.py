@@ -100,7 +100,12 @@ def run_command(cmd, stdout=None, environ=os.environ):
 
 
 def check_or_install(pkgName, version, extra_args=""):
-    if (module_version(pkgName) == "N/A"):
+    installed_version = module_version(pkgName)
+    needs_install = (installed_version == "N/A")
+    if not needs_install and version and trim_version(installed_version) != trim_version(version):
+        print(f"Version mismatch for {pkgName}: installed {installed_version}, need {version}. Upgrading...")
+        needs_install = True
+    if needs_install:
         cmd = [sys.executable, '-m', 'pip', 'install', pkgName if not version else pkgName + "==" + version]
         if extra_args:
             cmd = cmd +shlex.split(extra_args)

@@ -153,7 +153,7 @@ macro(
     target_include_directories(${TARGET_NAME} PUBLIC ${targetIncludeDirs})
 
     target_link_libraries(${TARGET_NAME} ${targetLinkLibraries} PySide6::pyside6 Shiboken6::libshiboken)
-    target_compile_definitions(${TARGET_NAME} PRIVATE Py_LIMITED_API=0x03050000)
+    target_compile_definitions(${TARGET_NAME} PRIVATE Py_LIMITED_API=0x030D0000)
     install(TARGETS ${TARGET_NAME} LIBRARY DESTINATION ${${PROJECT_NAME}_PYTHON_BINDINGS_INSTALL_PREFIX})
 
 
