@@ -59,6 +59,7 @@ RequirementsWidget::RequirementsWidget(QWidget *parent)
     , m_embedded(false)
     , m_apply(false)
     , m_first(true)
+    , m_connectionErrorShown(false)
 {
     ui->setupUi(this);
     m_textFilterModel.setDynamicSortFilter(true);
@@ -114,8 +115,19 @@ void RequirementsWidget::setManager(RequirementsManager *manager)
     connect(m_reqManager, &RequirementsManager::listOfTags, this, &RequirementsWidget::fillTagBar);
     connect(m_reqManager, &RequirementsManager::reportProgress, this, &RequirementsWidget::progress);
     connect(m_reqManager, &RequirementsManager::connectionError, this, [this](const QString &error) {
+        // Remember the failure before refreshing the status. setLoginData() below
+        // would otherwise immediately re-trigger the failing request, producing an
+        // infinite request -> error -> request loop (one modal dialog per iteration).
+        // The flag is cleared when new credentials arrive, when the project is
+        // re-validated or when the user explicitly refreshes.
+        const bool firstError = !m_connectionErrorShown;
+        m_connectionErrorShown = true;
         updateServerStatus();
-        QMessageBox::warning(this, tr("Connection error"), tr("Connection failed for this error:\n%1").arg(error));
+        // Show the warning at most once per connection attempt, so a burst of
+        // errors cannot stack modal dialogs on top of each other.
+        if (firstError) {
+            QMessageBox::warning(this, tr("Connection error"), tr("Connection failed for this error:\n%1").arg(error));
+        }
         ui->allRequirements->show();
         ui->textEdit->hide();
     });
@@ -191,6 +203,12 @@ void RequirementsWidget::setUrl(const QUrl &url)
         qDebug() << "RequirementsWidget::setUrl - Updating current dialog URL";
         m_currentDialog->setUrl(url);
     }
+    // Re-applying the same URL must not restart the connection or re-emit
+    // requirementsUrlChanged: callers driving this from that signal would loop.
+    if (url.toString() == m_requirementsUrl) {
+        qDebug() << "RequirementsWidget::setUrl - URL unchanged, ignoring";
+        return;
+    }
     onChangeOfCredentials(url.toString(), m_requirementsToken);
 }
 
@@ -206,6 +224,12 @@ void RequirementsWidget::setToken(const QString &token)
     if (m_currentDialog) {
         qDebug() << "RequirementsWidget::setToken - Updating current dialog token";
         m_currentDialog->setToken(token);
+    }
+    // Re-applying the same token must not restart the connection or re-emit
+    // requirementsCredentialsChanged: callers driving this from that signal would loop.
+    if (token == m_requirementsToken) {
+        qDebug() << "RequirementsWidget::setToken - Token unchanged, ignoring";
+        return;
     }
     onChangeOfCredentials(m_requirementsUrl, token);
 }
@@ -224,6 +248,8 @@ void RequirementsWidget::onChangeOfCredentials(const QString url, const QString 
     qDebug() << "Set Change of credentials called";
 
     m_checkingServer = true;
+    // New credentials: allow a fresh connection-error report.
+    m_connectionErrorShown = false;
 
     m_requirementsUrl = url;
     m_requirementsToken = token;
@@ -287,6 +313,8 @@ void RequirementsWidget::requestRequirements()
     }
 
     if (m_reqManager->hasValidProjectID()) {
+        // Explicit user refresh: allow reporting a new connection error.
+        m_connectionErrorShown = false;
         m_model->clearRequirements();
         m_reqManager->requestAllRequirements("");
     }
@@ -313,6 +341,10 @@ void RequirementsWidget::setLoginData()
          return;
     }
 
+    // Remember whether another request was already in flight. Starting a second
+    // fetch on top of a pending one is what turns a transient failure into a loop.
+    const bool managerWasIdle = !m_reqManager->isBusy();
+
     while (m_reqManager->isBusy()) {
         qDebug() << "RequirementsWidget::setLoginData - Manager is busy, processing events";
         QApplication::processEvents();
@@ -328,7 +360,13 @@ void RequirementsWidget::setLoginData()
 
     if (m_requirementsUrl == m_reqManager->projectUrl() && m_requirementsToken == m_reqManager->token()) {
         qDebug() << "RequirementsWidget::setLoginData - Credentials match manager, requesting requirements";
-        m_reqManager->requestAllRequirements("");
+        // Only fetch when the manager was idle, we are not in the middle of
+        // checking a connection, and the last attempt did not fail. Without this
+        // guard a failing fetch re-enters here through
+        // connectionError -> updateServerStatus and loops forever.
+        if (managerWasIdle && !m_checkingServer && !m_connectionErrorShown) {
+            m_reqManager->requestAllRequirements("");
+        }
         ui->sourceLineEdit->setText(m_requirementsUrl);
         ui->applyPushButton->setEnabled(true);
         return;
@@ -337,6 +375,8 @@ void RequirementsWidget::setLoginData()
     qDebug() << "RequirementsWidget::setLoginData - Credentials don't match manager, updating credentials";
     ui->sourceLineEdit->setText("");
     ui->applyPushButton->setEnabled(false);
+    // Validating new credentials: allow a fresh error report.
+    m_connectionErrorShown = false;
     m_reqManager->setRequirementsCredentials(m_requirementsUrl, m_requirementsToken);
 }
 

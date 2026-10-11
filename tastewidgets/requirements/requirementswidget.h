@@ -157,6 +157,7 @@ private:
     bool m_embedded;
     bool m_apply;
     bool m_first;
+    bool m_connectionErrorShown;
 };
 
 } // namespace requirement
