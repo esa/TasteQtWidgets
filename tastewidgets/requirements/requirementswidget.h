@@ -104,6 +104,11 @@ public:
 
     void setEmbedded() {m_embedded = true;};
 
+    //: When true, the Orbit chat shows an "Implement in TASTE" button that asks
+    //: Orbit to generate a full TASTE system from the requirements. Only the
+    //: SpaceCreator host sets this — python bindings (OpenGEODE, …) leave it off.
+    void setTasteEnabled(bool on) { m_tasteEnabled = on; };
+
 protected Q_SLOTS:
     void setLoginData();
     void applyEdits();
@@ -158,6 +163,7 @@ private:
     bool m_apply;
     bool m_first;
     bool m_connectionErrorShown;
+    bool m_tasteEnabled = false;
 };
 
 } // namespace requirement

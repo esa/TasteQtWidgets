@@ -473,6 +473,24 @@ void RequirementsWidget::showOrbitChat()
                "backwards- and forward-traceable. Using the parents/children in requirements.md, list "
                "requirements with no parent, no child, or a trace to an id that does not exist."));
 
+    if (m_tasteEnabled) {
+        dialog->addHelper(tr("Implement in TASTE"),
+                tr("Using the requirements in requirements.md, design and implement a complete TASTE system. "
+                   "Follow the taste-autobuild procedure:\n"
+                   "1. Read every requirement in requirements.md and derive the functions the system needs.\n"
+                   "2. Create an interfaceview.xml with those functions, their provided/required interfaces, "
+                   "the ASN.1 parameter types, and the connections between them (use the interfaceview-xml "
+                   "skill for the exact syntax).\n"
+                   "3. Create a dataview.asn with the ASN.1 types the interfaces use.\n"
+                   "4. Generate skeletons with `kazoo --gw -o work` (see the kazoo-skeletons skill).\n"
+                   "5. Implement each function: SDL state machines in .pr files for SDL functions, "
+                   "UserWidgets.py for GUI functions (see the taste-function-implementation skill).\n"
+                   "6. Build with `make -C work`.\n"
+                   "Explain your design choices, then create the files. Work in the current directory.\n"
+                   "Use the taste-system, interfaceview-xml, kazoo-skeletons and "
+                   "taste-function-implementation skills."));
+    }
+
     dialog->show();
     dialog->raise();
     dialog->activateWindow();
