@@ -352,6 +352,11 @@ void OrbitChatDialog::setBriefing(const QString &briefing)
     m_briefing = briefing;
 }
 
+void OrbitChatDialog::setWorkspace(std::shared_ptr<QTemporaryDir> dir)
+{
+    m_workspace = std::move(dir);
+}
+
 void OrbitChatDialog::addHelper(const QString &label, const QString &prompt)
 {
     if (m_helperRow == nullptr) {

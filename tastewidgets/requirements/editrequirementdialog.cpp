@@ -138,6 +138,8 @@ void EditRequirementDialog::showOrbitChat()
 
     auto *dialog = new OrbitChatDialog(prepared.directory, this);
     dialog->setBriefing(prepared.briefing);
+    // Keep the temp directory alive for the lifetime of the dialog.
+    dialog->setWorkspace(prepared.workspace);
     const QString id = m_requirement->m_id.trimmed();
     dialog->addHelper(tr("Review this requirement"),
             tr("Review requirement %1 in requirements.md against ECSS-E-ST-10-06C: compliance score 0-100, "

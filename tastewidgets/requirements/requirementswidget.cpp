@@ -448,6 +448,10 @@ void RequirementsWidget::showOrbitChat()
 
     auto *dialog = new OrbitChatDialog(prepared.directory, this);
     dialog->setBriefing(prepared.briefing);
+    // Keep the temp directory alive for the lifetime of the dialog — without
+    // this the QTemporaryDir is destroyed when `prepared` goes out of scope
+    // at the end of this function, and the agent finds no working directory.
+    dialog->setWorkspace(prepared.workspace);
     // The helper buttons replace the old Virtual Assistant's named queries.
     dialog->addHelper(tr("Find duplicates"),
             tr("Scan every requirement in requirements.md and find duplicates: pairs (or groups) of "

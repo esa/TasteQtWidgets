@@ -21,7 +21,10 @@
 
 #include <QDialog>
 #include <QList>
+#include <QTemporaryDir>
 #include <QVector>
+
+#include <memory>
 
 class QHBoxLayout;
 class QLineEdit;
@@ -51,6 +54,9 @@ public:
     //: Text the agent is given before the user's first question - context and
     //: standing instructions. Sent once, when the window is first shown.
     void setBriefing(const QString &briefing);
+    //: Take ownership of the temporary working directory so it survives until
+    //: the dialog is destroyed (and the agent has finished working in it).
+    void setWorkspace(std::shared_ptr<QTemporaryDir> dir);
     //: Add a helper button under the transcript that asks `prompt` when pressed.
     void addHelper(const QString &label, const QString &prompt);
 
@@ -98,6 +104,7 @@ private:
     QHBoxLayout *m_helperRow = nullptr;
     QString m_projectDir;
     QString m_briefing;
+    std::shared_ptr<QTemporaryDir> m_workspace;
     bool m_started = false;
     QVector<Block> m_blocks;
     QString m_answerMarkdown;
