@@ -429,8 +429,9 @@ void RequirementsWidget::showOrbitChat()
     }
 
     // Orbit needs a directory to work in and the requirements themselves. The
-    // requirements server URL is not a directory, so it is never used as one:
-    // the loaded requirements are written to a real temp directory instead.
+    // requirements server URL is not a directory, so it is never used as one.
+    // When the real project directory is known (SpaceCreator), Orbit works
+    // there so it can create files in place; otherwise a temp directory is used.
     const QString specType = [this]() {
         switch (m_model->getState()) {
         case RequirementsModelBase::SSS:
@@ -444,7 +445,7 @@ void RequirementsWidget::showOrbitChat()
         }
     }();
     const OrbitRequirementContext::Prepared prepared =
-            OrbitRequirementContext::prepare(*m_model->getRequirements(), specType);
+            OrbitRequirementContext::prepare(*m_model->getRequirements(), specType, m_projectDir);
 
     auto *dialog = new OrbitChatDialog(prepared.directory, this);
     dialog->setBriefing(prepared.briefing);
@@ -452,41 +453,57 @@ void RequirementsWidget::showOrbitChat()
     // this the QTemporaryDir is destroyed when `prepared` goes out of scope
     // at the end of this function, and the agent finds no working directory.
     dialog->setWorkspace(prepared.workspace);
+
+    // Every analysis helper is told to write its report to the same Markdown
+    // file in the working directory. The file is created on the first call
+    // and incrementally appended to on subsequent calls.
+    const QString reportSuffix = tr(
+            "\n\nWrite your findings to `requirements-analysis-report.md` in the current working "
+            "directory. If the file already exists, read it first and append or update your "
+            "section under a new `##` heading (do not delete what is already there). Always "
+            "include the date, the analysis type, and a summary table at the top of your section.");
+
     // The helper buttons replace the old Virtual Assistant's named queries.
     dialog->addHelper(tr("Find duplicates"),
             tr("Scan every requirement in requirements.md and find duplicates: pairs (or groups) of "
                "requirements that express the same thing, per ECSS 8.2.5 Uniqueness. For each, give the "
-               "requirement ids, why they duplicate each other, and which one to keep or how to merge them."));
+               "requirement ids, why they duplicate each other, and which one to keep or how to merge them.") +
+                    reportSuffix);
     dialog->addHelper(tr("Check consistency and completeness"),
             tr("Check the whole requirements set for consistency and completeness against ECSS-E-ST-10-06C. "
                "Look for contradictions between requirements (8.2.9, 8.2.7), requirements that are not "
                "self-contained (8.2.8), requirements that are not verifiable (8.2.9), unquantified performance "
                "(8.2.1), missing tolerance (8.2.10) and broken traceability (8.2.3). Report each finding with "
-               "the requirement ids, the problem and the ECSS clause."));
+               "the requirement ids, the problem and the ECSS clause.") +
+                    reportSuffix);
     dialog->addHelper(tr("Review against ECSS"),
             tr("Review each requirement against ECSS-E-ST-10-06C: the required verbal form and wording "
                "(shall/should/may/can), the forbidden terms (8.3.3, e.g. \"etc.\", \"and/or\", \"optimize\", "
                "\"adequate\", \"as far as possible\"), singularity (8.2.7) and unambiguity (8.2.4). Give a "
-               "compliance score 0-100 per requirement and how to fix the wording."));
+               "compliance score 0-100 per requirement and how to fix the wording.") +
+                    reportSuffix);
     dialog->addHelper(tr("Check traceability"),
             tr("Check traceability of the requirements set (ECSS 8.2.3): every requirement should be "
                "backwards- and forward-traceable. Using the parents/children in requirements.md, list "
-               "requirements with no parent, no child, or a trace to an id that does not exist."));
+               "requirements with no parent, no child, or a trace to an id that does not exist.") +
+                    reportSuffix);
 
     if (m_tasteEnabled) {
         dialog->addHelper(tr("Implement in TASTE"),
-                tr("Using the requirements in requirements.md, design and implement a complete TASTE system. "
+                tr("Using the requirements in requirements.md, design and implement a complete TASTE system "
+                   "in the current working directory (which is the project directory). "
                    "Follow the taste-autobuild procedure:\n"
                    "1. Read every requirement in requirements.md and derive the functions the system needs.\n"
-                   "2. Create an interfaceview.xml with those functions, their provided/required interfaces, "
+                   "2. Create interfaceview.xml with those functions, their provided/required interfaces, "
                    "the ASN.1 parameter types, and the connections between them (use the interfaceview-xml "
                    "skill for the exact syntax).\n"
-                   "3. Create a dataview.asn with the ASN.1 types the interfaces use.\n"
+                   "3. Create dataview.asn with the ASN.1 types the interfaces use.\n"
                    "4. Generate skeletons with `kazoo --gw -o work` (see the kazoo-skeletons skill).\n"
                    "5. Implement each function: SDL state machines in .pr files for SDL functions, "
                    "UserWidgets.py for GUI functions (see the taste-function-implementation skill).\n"
                    "6. Build with `make -C work`.\n"
-                   "Explain your design choices, then create the files. Work in the current directory.\n"
+                   "Create the files directly in the current directory — that is the project folder, "
+                   "not a temporary location. Do not create a subdirectory. "
                    "Use the taste-system, interfaceview-xml, kazoo-skeletons and "
                    "taste-function-implementation skills."));
     }

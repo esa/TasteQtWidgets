@@ -50,9 +50,12 @@ public:
         std::shared_ptr<QTemporaryDir> workspace;
     };
 
-    //: Writes the requirements into a fresh working directory and composes the
-    //: briefing. `specType` is "SRS" or "SSS".
-    static Prepared prepare(const QList<Requirement> &requirements, const QString &specType);
+    //: Writes the requirements into a working directory and composes the briefing.
+    //: `specType` is "SRS" or "SSS". When `projectDir` is non-empty it is used as
+    //: the working directory (so Orbit can create files in the real project);
+    //: otherwise a fresh temp directory is created and removed when the chat closes.
+    static Prepared prepare(const QList<Requirement> &requirements, const QString &specType,
+            const QString &projectDir = {});
 
     //: The condensed ECSS-E-ST-10-06C guidance embedded in every briefing.
     static QString ecssGuidance();

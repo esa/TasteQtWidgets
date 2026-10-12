@@ -108,7 +108,7 @@ QString OrbitRequirementContext::renderRequirements(const QList<Requirement> &re
 }
 
 OrbitRequirementContext::Prepared OrbitRequirementContext::prepare(
-        const QList<Requirement> &requirements, const QString &specType)
+        const QList<Requirement> &requirements, const QString &specType, const QString &projectDir)
 {
     Prepared prepared;
     prepared.directory = QDir::currentPath(); // A real directory, never a URL.
@@ -138,8 +138,30 @@ OrbitRequirementContext::Prepared OrbitRequirementContext::prepare(
         return prepared;
     }
 
-    // A fresh directory each time, so a previous run's file is never mistaken
-    // for the current set. `directive.workspace` removes it when the chat closes.
+    // When a real project directory is given (SpaceCreator), use it so Orbit can
+    // create files (interfaceview.xml, report, etc.) in the actual project.
+    // Otherwise create a fresh temp directory.
+    if (!projectDir.isEmpty() && QDir(projectDir).exists()) {
+        prepared.directory = projectDir;
+        prepared.requirementsFile = QStringLiteral("%1/requirements.md").arg(projectDir);
+        QFile file(prepared.requirementsFile);
+        if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            QTextStream(&file) << renderRequirements(requirements);
+            file.close();
+            prepared.briefing +=
+                    QStringLiteral("\nThe file `requirements.md` in your working directory contains all %1 "
+                                   "requirements (%2 of them).\n")
+                            .arg(spec)
+                            .arg(requirements.size());
+        } else {
+            // Cannot write to project dir: fall back to temp.
+            prepared.requirementsFile.clear();
+            prepared.briefing += QStringLiteral("\n## The %1 requirements\n\n%2").arg(spec, renderRequirements(requirements));
+        }
+        return prepared;
+    }
+
+    // No project dir: use a temp directory, removed when the chat closes.
     auto dir = std::make_shared<QTemporaryDir>(QDir::tempPath() + QStringLiteral("/orbit-requirements-XXXXXX"));
     if (!dir->isValid()) {
         // Fall back to the briefing carrying the requirements inline, so the

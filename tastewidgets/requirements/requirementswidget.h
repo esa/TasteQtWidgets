@@ -109,6 +109,11 @@ public:
     //: SpaceCreator host sets this — python bindings (OpenGEODE, …) leave it off.
     void setTasteEnabled(bool on) { m_tasteEnabled = on; };
 
+    //: The real project directory (where the interface view lives). When set,
+    //: Orbit works there so it can create files in place; otherwise a temp dir
+    //: is used. Only SpaceCreator sets this.
+    void setProjectDir(const QString &dir) { m_projectDir = dir; };
+
 protected Q_SLOTS:
     void setLoginData();
     void applyEdits();
@@ -164,6 +169,7 @@ private:
     bool m_first;
     bool m_connectionErrorShown;
     bool m_tasteEnabled = false;
+    QString m_projectDir;
 };
 
 } // namespace requirement
