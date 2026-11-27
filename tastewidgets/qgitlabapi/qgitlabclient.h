@@ -176,6 +176,7 @@ protected:
     int totalPagesFromHeader(QNetworkReply *reply) const;
     int numberHeaderAttribute(QNetworkReply *reply, const QString &headername) const;
     void setBusy(bool busy);
+    bool sendsToken(const QUrl &uri) const;
     bool isIssueRequest(QNetworkReply *reply) const;
 
 private:
