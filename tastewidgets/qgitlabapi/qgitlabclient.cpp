@@ -388,6 +388,8 @@ QNetworkReply *QGitlabClient::sendRequest(QGitlabClient::ReqType reqType, const 
     // the request instead of serving the public data.
     if (sendsToken(uri)) {
         request.setRawHeader("PRIVATE-TOKEN", mToken.toUtf8());
+        // Qt copies the header into a redirected request, also to another host
+        request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::SameOriginRedirectPolicy);
     }
     request.setHeader(QNetworkRequest::ContentTypeHeader, kContentType);
 
