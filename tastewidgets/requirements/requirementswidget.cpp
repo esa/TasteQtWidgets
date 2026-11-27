@@ -22,11 +22,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include "selectsourcedialog.h"
 #include "requirementsmanager.h"
 #include "requirementsmodelcommon.h"
-#include "virtualassistantdialog.h"
+#include "orbitchatdialog.h"
+#include "orbitrequirementcontext.h"
 #include "ui_requirementswidget.h"
 #include "widgetbar.h"
 
 #include <QCursor>
+#include <QDir>
 #include <QDesktopServices>
 #include <QHeaderView>
 #include <QLineEdit>
@@ -59,6 +61,7 @@ RequirementsWidget::RequirementsWidget(QWidget *parent)
     , m_embedded(false)
     , m_apply(false)
     , m_first(true)
+    , m_connectionErrorShown(false)
 {
     ui->setupUi(this);
     m_textFilterModel.setDynamicSortFilter(true);
@@ -82,7 +85,7 @@ RequirementsWidget::RequirementsWidget(QWidget *parent)
             &RequirementsWidget::modelSelectionChanged);
     connect(ui->allRequirements, &QTableView::doubleClicked, this, &RequirementsWidget::showEditRequirementDialog);
     connect(ui->clearButton, &QPushButton::clicked, this, &RequirementsWidget::onClear);
-    connect(ui->vaButton, &QPushButton::clicked, this, &RequirementsWidget::showVirtualAssistantDialog);
+    connect(ui->vaButton, &QPushButton::clicked, this, &RequirementsWidget::showOrbitChat);
     connect(ui->createRequirementButton, &QPushButton::clicked, this, &RequirementsWidget::showNewRequirementDialog);
     connect(ui->exportRequirementsButton, &QPushButton::clicked, this, &RequirementsWidget::showExportRequirementsDialog);
     connect(ui->importRequirementsButton, &QPushButton::clicked, this, &RequirementsWidget::showImportRequirementsDialog);
@@ -114,8 +117,19 @@ void RequirementsWidget::setManager(RequirementsManager *manager)
     connect(m_reqManager, &RequirementsManager::listOfTags, this, &RequirementsWidget::fillTagBar);
     connect(m_reqManager, &RequirementsManager::reportProgress, this, &RequirementsWidget::progress);
     connect(m_reqManager, &RequirementsManager::connectionError, this, [this](const QString &error) {
+        // Remember the failure before refreshing the status. setLoginData() below
+        // would otherwise immediately re-trigger the failing request, producing an
+        // infinite request -> error -> request loop (one modal dialog per iteration).
+        // The flag is cleared when new credentials arrive, when the project is
+        // re-validated or when the user explicitly refreshes.
+        const bool firstError = !m_connectionErrorShown;
+        m_connectionErrorShown = true;
         updateServerStatus();
-        QMessageBox::warning(this, tr("Connection error"), tr("Connection failed for this error:\n%1").arg(error));
+        // Show the warning at most once per connection attempt, so a burst of
+        // errors cannot stack modal dialogs on top of each other.
+        if (firstError) {
+            QMessageBox::warning(this, tr("Connection error"), tr("Connection failed for this error:\n%1").arg(error));
+        }
         ui->allRequirements->show();
         ui->textEdit->hide();
     });
@@ -191,6 +205,12 @@ void RequirementsWidget::setUrl(const QUrl &url)
         qDebug() << "RequirementsWidget::setUrl - Updating current dialog URL";
         m_currentDialog->setUrl(url);
     }
+    // Re-applying the same URL must not restart the connection or re-emit
+    // requirementsUrlChanged: callers driving this from that signal would loop.
+    if (url.toString() == m_requirementsUrl) {
+        qDebug() << "RequirementsWidget::setUrl - URL unchanged, ignoring";
+        return;
+    }
     onChangeOfCredentials(url.toString(), m_requirementsToken);
 }
 
@@ -206,6 +226,12 @@ void RequirementsWidget::setToken(const QString &token)
     if (m_currentDialog) {
         qDebug() << "RequirementsWidget::setToken - Updating current dialog token";
         m_currentDialog->setToken(token);
+    }
+    // Re-applying the same token must not restart the connection or re-emit
+    // requirementsCredentialsChanged: callers driving this from that signal would loop.
+    if (token == m_requirementsToken) {
+        qDebug() << "RequirementsWidget::setToken - Token unchanged, ignoring";
+        return;
     }
     onChangeOfCredentials(m_requirementsUrl, token);
 }
@@ -224,6 +250,8 @@ void RequirementsWidget::onChangeOfCredentials(const QString url, const QString 
     qDebug() << "Set Change of credentials called";
 
     m_checkingServer = true;
+    // New credentials: allow a fresh connection-error report.
+    m_connectionErrorShown = false;
 
     m_requirementsUrl = url;
     m_requirementsToken = token;
@@ -287,6 +315,8 @@ void RequirementsWidget::requestRequirements()
     }
 
     if (m_reqManager->hasValidProjectID()) {
+        // Explicit user refresh: allow reporting a new connection error.
+        m_connectionErrorShown = false;
         m_model->clearRequirements();
         m_reqManager->requestAllRequirements("");
     }
@@ -313,13 +343,26 @@ void RequirementsWidget::setLoginData()
          return;
     }
 
+    // If the previous connection attempt already failed, do not clear the list
+    // and do not retry. updateServerStatus() calls setLoginData() from the
+    // connectionError handler; retrying here would re-request, fail again and
+    // loop forever. Wait for new credentials, or for an explicit refresh which
+    // clears this flag.
+    if (m_connectionErrorShown) {
+        qDebug() << "RequirementsWidget::setLoginData - Previous connection failed, not retrying";
+        ui->sourceLineEdit->setText(m_requirementsUrl);
+        ui->applyPushButton->setEnabled(true);
+        return;
+    }
+
     while (m_reqManager->isBusy()) {
         qDebug() << "RequirementsWidget::setLoginData - Manager is busy, processing events";
         QApplication::processEvents();
     }
 
-    if (m_requirementsUrl.isEmpty() || m_requirementsToken.isEmpty()) {
-        qDebug() << "RequirementsWidget::setLoginData - Login empty (URL or token)";
+    // Only the URL is required. Public projects can be loaded without a token.
+    if (m_requirementsUrl.isEmpty()) {
+        qDebug() << "RequirementsWidget::setLoginData - Login empty (no URL)";
         return;
     }
 
@@ -336,6 +379,8 @@ void RequirementsWidget::setLoginData()
     qDebug() << "RequirementsWidget::setLoginData - Credentials don't match manager, updating credentials";
     ui->sourceLineEdit->setText("");
     ui->applyPushButton->setEnabled(false);
+    // Validating new credentials: allow a fresh error report.
+    m_connectionErrorShown = false;
     m_reqManager->setRequirementsCredentials(m_requirementsUrl, m_requirementsToken);
 }
 
@@ -377,11 +422,95 @@ void RequirementsWidget::openIssueLink(const QModelIndex &index)
 }
 
 
-void RequirementsWidget::showVirtualAssistantDialog()
+void RequirementsWidget::showOrbitChat()
 {
-    QScopedPointer<VirtualAssistantDialog> dialog(new VirtualAssistantDialog(m_model));
-    dialog->setModal(true);
-    const auto ret = dialog->exec();
+    if (!m_model) {
+        return;
+    }
+
+    // Orbit needs a directory to work in and the requirements themselves. The
+    // requirements server URL is not a directory, so it is never used as one.
+    // When the real project directory is known (SpaceCreator), Orbit works
+    // there so it can create files in place; otherwise a temp directory is used.
+    const QString specType = [this]() {
+        switch (m_model->getState()) {
+        case RequirementsModelBase::SSS:
+            return QStringLiteral("SSS");
+        case RequirementsModelBase::Both:
+            return QStringLiteral("SRS and SSS");
+        case RequirementsModelBase::SRS:
+            return QStringLiteral("SRS");
+        default:
+            return QStringLiteral("requirements");
+        }
+    }();
+    const OrbitRequirementContext::Prepared prepared =
+            OrbitRequirementContext::prepare(*m_model->getRequirements(), specType, m_projectDir);
+
+    auto *dialog = new OrbitChatDialog(prepared.directory, this);
+    dialog->setBriefing(prepared.briefing);
+    // Keep the temp directory alive for the lifetime of the dialog — without
+    // this the QTemporaryDir is destroyed when `prepared` goes out of scope
+    // at the end of this function, and the agent finds no working directory.
+    dialog->setWorkspace(prepared.workspace);
+
+    // Every analysis helper is told to write its report to the same Markdown
+    // file in the working directory. The file is created on the first call
+    // and incrementally appended to on subsequent calls.
+    const QString reportSuffix = tr(
+            "\n\nWrite your findings to `requirements-analysis-report.md` in the current working "
+            "directory. If the file already exists, read it first and append or update your "
+            "section under a new `##` heading (do not delete what is already there). Always "
+            "include the date, the analysis type, and a summary table at the top of your section.");
+
+    // The helper buttons replace the old Virtual Assistant's named queries.
+    dialog->addHelper(tr("Find duplicates"),
+            tr("Scan every requirement in requirements.md and find duplicates: pairs (or groups) of "
+               "requirements that express the same thing, per ECSS 8.2.5 Uniqueness. For each, give the "
+               "requirement ids, why they duplicate each other, and which one to keep or how to merge them.") +
+                    reportSuffix);
+    dialog->addHelper(tr("Check consistency and completeness"),
+            tr("Check the whole requirements set for consistency and completeness against ECSS-E-ST-10-06C. "
+               "Look for contradictions between requirements (8.2.9, 8.2.7), requirements that are not "
+               "self-contained (8.2.8), requirements that are not verifiable (8.2.9), unquantified performance "
+               "(8.2.1), missing tolerance (8.2.10) and broken traceability (8.2.3). Report each finding with "
+               "the requirement ids, the problem and the ECSS clause.") +
+                    reportSuffix);
+    dialog->addHelper(tr("Review against ECSS"),
+            tr("Review each requirement against ECSS-E-ST-10-06C: the required verbal form and wording "
+               "(shall/should/may/can), the forbidden terms (8.3.3, e.g. \"etc.\", \"and/or\", \"optimize\", "
+               "\"adequate\", \"as far as possible\"), singularity (8.2.7) and unambiguity (8.2.4). Give a "
+               "compliance score 0-100 per requirement and how to fix the wording.") +
+                    reportSuffix);
+    dialog->addHelper(tr("Check traceability"),
+            tr("Check traceability of the requirements set (ECSS 8.2.3): every requirement should be "
+               "backwards- and forward-traceable. Using the parents/children in requirements.md, list "
+               "requirements with no parent, no child, or a trace to an id that does not exist.") +
+                    reportSuffix);
+
+    if (m_tasteEnabled) {
+        dialog->addHelper(tr("Implement in TASTE"),
+                tr("Using the requirements in requirements.md, design and implement a complete TASTE system "
+                   "in the current working directory (which is the project directory). "
+                   "Follow the taste-autobuild procedure:\n"
+                   "1. Read every requirement in requirements.md and derive the functions the system needs.\n"
+                   "2. Create interfaceview.xml with those functions, their provided/required interfaces, "
+                   "the ASN.1 parameter types, and the connections between them (use the interfaceview-xml "
+                   "skill for the exact syntax).\n"
+                   "3. Create dataview.asn with the ASN.1 types the interfaces use.\n"
+                   "4. Generate skeletons with `kazoo --gw -o work` (see the kazoo-skeletons skill).\n"
+                   "5. Implement each function: SDL state machines in .pr files for SDL functions, "
+                   "UserWidgets.py for GUI functions (see the taste-function-implementation skill).\n"
+                   "6. Build with `make -C work`.\n"
+                   "Create the files directly in the current directory — that is the project folder, "
+                   "not a temporary location. Do not create a subdirectory. "
+                   "Use the taste-system, interfaceview-xml, kazoo-skeletons and "
+                   "taste-function-implementation skills."));
+    }
+
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }
 
 

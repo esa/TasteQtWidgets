@@ -104,6 +104,16 @@ public:
 
     void setEmbedded() {m_embedded = true;};
 
+    //: When true, the Orbit chat shows an "Implement in TASTE" button that asks
+    //: Orbit to generate a full TASTE system from the requirements. Only the
+    //: SpaceCreator host sets this — python bindings (OpenGEODE, …) leave it off.
+    void setTasteEnabled(bool on) { m_tasteEnabled = on; };
+
+    //: The real project directory (where the interface view lives). When set,
+    //: Orbit works there so it can create files in place; otherwise a temp dir
+    //: is used. Only SpaceCreator sets this.
+    void setProjectDir(const QString &dir) { m_projectDir = dir; };
+
 protected Q_SLOTS:
     void setLoginData();
     void applyEdits();
@@ -111,7 +121,7 @@ protected Q_SLOTS:
     void updateServerStatus();
     void openIssueLink(const QModelIndex &index);
     void requestRequirements();
-    void showVirtualAssistantDialog();
+    void showOrbitChat();
     void showNewRequirementDialog();
     void showEditRequirementDialog(const QModelIndex &index);
     void showExportRequirementsDialog();
@@ -157,6 +167,9 @@ private:
     bool m_embedded;
     bool m_apply;
     bool m_first;
+    bool m_connectionErrorShown;
+    bool m_tasteEnabled = false;
+    QString m_projectDir;
 };
 
 } // namespace requirement

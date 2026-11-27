@@ -35,6 +35,7 @@ CredentialWidget::CredentialWidget(QWidget *parent)
     ui->urlLabel->setToolTip(urlTooltip);
     ui->urlLineEdit->setToolTip(urlTooltip);
     const QString tokenTooltip = tr(
+            "Optional. Public projects can be read without a token.\n"
             "To create a personal access token, go to  Profile > Preferences > Access Tokens \n in your gitlab server");
     ui->tokenLabel->setToolTip(tokenTooltip);
     ui->tokenLineEdit->setToolTip(tokenTooltip);

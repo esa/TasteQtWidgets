@@ -375,10 +375,22 @@ QString QGitlabClient::token()
     return mToken;
 }
 
+bool QGitlabClient::sendsToken(const QUrl &uri) const
+{
+    return !mToken.isEmpty() && uri.scheme() == QLatin1String("https");
+}
+
 QNetworkReply *QGitlabClient::sendRequest(QGitlabClient::ReqType reqType, const QUrl &uri)
 {
     QNetworkRequest request(uri);
-    request.setRawHeader("PRIVATE-TOKEN", mToken.toUtf8());
+    // Public projects can be read anonymously. Only send the token when one is
+    // set, otherwise an empty PRIVATE-TOKEN header is sent and the server rejects
+    // the request instead of serving the public data.
+    if (sendsToken(uri)) {
+        request.setRawHeader("PRIVATE-TOKEN", mToken.toUtf8());
+        // Qt copies the header into a redirected request, also to another host
+        request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::SameOriginRedirectPolicy);
+    }
     request.setHeader(QNetworkRequest::ContentTypeHeader, kContentType);
 
     QNetworkReply *reply;
@@ -478,10 +490,14 @@ bool gitlab::QGitlabClient::isIssueRequest(QNetworkReply *reply) const
 
 void gitlab::QGitlabClient::notifyError(QNetworkReply *reply, const QString &text)
 {
-    const QStringList fields {
+    QStringList fields {
         reply ? reply->errorString() : QString(),
         text,
     };
+    if (reply && !mToken.isEmpty() && !sendsToken(reply->request().url())) {
+        fields.append(tr("The GitLab token was not sent, because the connection to %1 does not use https.")
+                              .arg(reply->request().url().host()));
+    }
 
     const QString &msg = fields.join("\n").simplified();
     if (msg.isEmpty()) {

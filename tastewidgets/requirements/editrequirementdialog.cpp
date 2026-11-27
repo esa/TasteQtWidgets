@@ -16,6 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 */
 #include "editrequirementdialog.h"
 
+#include "orbitrequirementcontext.h"
+
+#include <QDir>
+
 namespace requirement {
 
 EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requirement *requirement, QWidget *parent)
@@ -24,22 +28,33 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
     , m_requirement(requirement)
     , ui(new Ui::BasicRequirementDialog)
 {
-//    m_model->syncTraceability();
-
     ui->setupUi(this);
+    const bool isSSS = (m_requirement->m_reqType.compare(k_SSSLabel) == 0);
+    // SRS and SSS can contain different types of requirement.
+    // Set the list of requirement types according to the specification type.
+    const QStringList* typeListPtr = nullptr; 
+    if(isSSS)
+    {
+        typeListPtr = &TypeListSSS;
+    }
+    else
+    {
+        typeListPtr = &TypeListSRS;
+    }
+    auto typeList = *typeListPtr;
     connect(ui->titleLineEdit, &QLineEdit::textChanged, this, &EditRequirementDialog::updateOkButton);
     connect(ui->browserButton, &QPushButton::clicked, this, &EditRequirementDialog::openIssueLink);
     connect(ui->descriptionTextEdit, &QTextEdit::textChanged, this, &EditRequirementDialog::updateOkButton);
 
     connect(ui->addRefButton, &QPushButton::clicked, this, &EditRequirementDialog::addParent);
     connect(ui->removeRefButton, &QPushButton::clicked, this, &EditRequirementDialog::removeParent);
-    connect(ui->virtualassistantButton, &QPushButton::clicked, this, &EditRequirementDialog::showVirtualAssistantDialog);
+    connect(ui->virtualassistantButton, &QPushButton::clicked, this, &EditRequirementDialog::showOrbitChat);
 
     ui->titleLineEdit->setText(m_requirement->m_longName);
     ui->idLineEdit->setText(m_requirement->m_id);
     ui->descriptionTextEdit->setText(m_requirement->m_description);
     ui->noteTextEdit->setText(m_requirement->m_note);
-    ui->typeComboBox->addItems(TypeList);
+    ui->typeComboBox->addItems(typeList); // Add requirement types from requirement list.
     ui->statusComboBox->addItems(StatusList);
     ui->justificationTextEdit->setText(m_requirement->m_justification);
     ui->versionLineEdit->setText(m_requirement->m_valVersion);
@@ -49,7 +64,7 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
     ui->complianceComboBox->addItems(ComplianceList);
     ui->complianceStatusComboBox->addItems(StatusList);
 
-    auto typeIndex = TypeList.indexOf(m_requirement->m_type);
+    auto typeIndex = typeList.indexOf(m_requirement->m_type);
     auto statusIndex = StatusList.indexOf(m_requirement->m_status);
     auto validationIndex = StatusList.indexOf(m_requirement->m_valStatus);
     auto complianceIndex = ComplianceList.indexOf(m_requirement->m_compliance);
@@ -68,7 +83,8 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
     ui->complianceComboBox->setCurrentIndex(complianceIndex);
     ui->complianceStatusComboBox->setCurrentIndex(complianceStatusIndex);
 
-    if (m_requirement->m_reqType.compare(k_SSSLabel) == 0) {
+    // Display specification combo box according to specification type.
+    if (isSSS) {
         ui->specificationComboBox->setCurrentIndex(1);
         ui->priorityComboBox->setEnabled(false);
         ui->addRefButton->setEnabled(false);
@@ -76,7 +92,6 @@ EditRequirementDialog::EditRequirementDialog(RequirementsModelBase *model, Requi
     }
     else {
         ui->specificationComboBox->setCurrentIndex(0);
-
         ui->priorityComboBox->addItems(PriorityList);
         auto priorityIndex = PriorityList.indexOf(m_requirement->m_priority);
         if(priorityIndex == -1) priorityIndex = 0;
@@ -110,15 +125,40 @@ EditRequirementDialog::~EditRequirementDialog()
     delete ui;
 }
 
-void EditRequirementDialog::showVirtualAssistantDialog()
+void EditRequirementDialog::showOrbitChat()
 {
     updateRequirement();
 
-    QString reqIfId = ui->idLineEdit->text();
-    QString description = ui->descriptionTextEdit->toPlainText();
-    QScopedPointer<VirtualAssistantDialog> dialog(new VirtualAssistantDialog(m_model, m_requirement));
-    dialog->setModal(true);
-    const auto ret = dialog->exec();
+    // Ask about this one requirement, with the whole set alongside it so Orbit
+    // can judge traceability and duplication against the rest.
+    QList<Requirement> requirements = m_model ? *m_model->getRequirements() : QList<Requirement>();
+    const QString specType =
+            m_requirement->m_reqType.compare(k_SSSLabel) == 0 ? QStringLiteral("SSS") : QStringLiteral("SRS");
+    const OrbitRequirementContext::Prepared prepared = OrbitRequirementContext::prepare(requirements, specType);
+
+    auto *dialog = new OrbitChatDialog(prepared.directory, this);
+    dialog->setBriefing(prepared.briefing);
+    // Keep the temp directory alive for the lifetime of the dialog.
+    dialog->setWorkspace(prepared.workspace);
+    const QString id = m_requirement->m_id.trimmed();
+    dialog->addHelper(tr("Review this requirement"),
+            tr("Review requirement %1 in requirements.md against ECSS-E-ST-10-06C: compliance score 0-100, "
+               "the wording (shall/should/may/can, forbidden terms 8.3.3), singularity (8.2.7), unambiguity "
+               "(8.2.4), quantifiability (8.2.1) and verifiability (8.2.9), then a reworded version.")
+                    .arg(id));
+    dialog->addHelper(tr("Suggest a type"),
+            tr("For requirement %1 in requirements.md, give the single ECSS requirement type from SS6 "
+               "(functional, mission, interface, environmental, operational, human factor, logistics "
+               "support, physical, product assurance, configuration, design, verification) and one sentence "
+               "of justification.")
+                    .arg(id));
+    dialog->addHelper(tr("Find duplicates of this one"),
+            tr("Find every requirement in requirements.md that duplicates or overlaps requirement %1 "
+               "(ECSS 8.2.5). Give the ids, why they overlap, and how to resolve it.")
+                    .arg(id));
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }
 
 void EditRequirementDialog::openIssueLink()

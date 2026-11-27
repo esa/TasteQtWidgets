@@ -20,7 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/lgpl-2.1.html
 #include <QDialog>
 #include <QPointer>
 #include "requirement.h"
-#include "virtualassistantdialog.h"
+#include "orbitchatdialog.h"
 
 namespace Ui {
 class BasicRequirementDialog;
@@ -41,7 +41,8 @@ public:
     explicit AddNewRequirementDialog(requirement::RequirementsModelBase *model, Requirement *requirement, QWidget *parent = nullptr);
     ~AddNewRequirementDialog();
     void updateRequirement();
-
+    static const size_t SPECIFICATION_TYPE_INDEX_SRS = 0U;
+    static const size_t SPECIFICATION_TYPE_INDEX_SSS = 1U;
 private:
     void addParent();
     void removeParent();

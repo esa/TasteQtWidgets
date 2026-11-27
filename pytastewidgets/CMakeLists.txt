@@ -88,6 +88,8 @@ set(TASTE_SUBLIB_SRC_ROOT ${CMAKE_SOURCE_DIR}/../tastewidgets)
 add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/qgitlabapi ${CMAKE_BINARY_DIR}/tastewidgets/qgitlabapi)
 add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/QXlsx ${CMAKE_BINARY_DIR}/tastewidgets/qxslx)
 add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/tracecommon ${CMAKE_BINARY_DIR}/tastewidgets/tracecommon)
+add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/orbitacp ${CMAKE_BINARY_DIR}/tastewidgets/orbitacp)
+add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/mermaid2svg ${CMAKE_BINARY_DIR}/tastewidgets/mermaid2svg)
 add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/requirements ${CMAKE_BINARY_DIR}/tastewidgets/requirements)
 add_subdirectory(${TASTE_SUBLIB_SRC_ROOT}/reviews ${CMAKE_BINARY_DIR}/tastewidgets/reviews)
 
