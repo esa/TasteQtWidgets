@@ -490,10 +490,14 @@ bool gitlab::QGitlabClient::isIssueRequest(QNetworkReply *reply) const
 
 void gitlab::QGitlabClient::notifyError(QNetworkReply *reply, const QString &text)
 {
-    const QStringList fields {
+    QStringList fields {
         reply ? reply->errorString() : QString(),
         text,
     };
+    if (reply && !mToken.isEmpty() && !sendsToken(reply->request().url())) {
+        fields.append(tr("The GitLab token was not sent, because the connection to %1 does not use https.")
+                              .arg(reply->request().url().host()));
+    }
 
     const QString &msg = fields.join("\n").simplified();
     if (msg.isEmpty()) {
